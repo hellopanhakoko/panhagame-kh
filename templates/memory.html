@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEMORY — NEONarcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --neon-pink: #ff006e; --neon-cyan: #00f5ff; --bg: #050508; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,0,110,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,0,110,0.02) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+  }
+  .back-btn {
+    align-self: flex-start;
+    color: var(--neon-pink);
+    text-decoration: none;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    border: 1px solid rgba(255,0,110,0.3);
+    padding: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,0,110,0.1); }
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--neon-pink);
+    text-shadow: 0 0 20px var(--neon-pink);
+    margin-bottom: 1.5rem;
+  }
+  .hud {
+    display: flex;
+    gap: 3rem;
+    margin-bottom: 1.5rem;
+  }
+  .hud-item { text-align: center; }
+  .hud-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink);
+  }
+  .hud-label {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 90px);
+    gap: 12px;
+    perspective: 600px;
+  }
+  .card {
+    width: 90px;
+    height: 90px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.4s ease;
+    position: relative;
+  }
+  .card.flipped, .card.matched { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+  }
+  .card-back {
+    background: #0d0d1a;
+    border: 1px solid rgba(255,0,110,0.3);
+    transition: border-color 0.2s;
+  }
+  .card:hover:not(.matched) .card-back {
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 15px rgba(255,0,110,0.2);
+  }
+  .card-back::after {
+    content: '?';
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem;
+    color: rgba(255,0,110,0.3);
+  }
+  .card-front {
+    transform: rotateY(180deg);
+    background: #0d0d1a;
+    border: 1px solid var(--neon-pink);
+    box-shadow: 0 0 15px rgba(255,0,110,0.3);
+  }
+  .card.matched .card-front {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.4);
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,5,8,0.9);
+    z-index: 100;
+  }
+  .overlay h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--neon-pink);
+    text-shadow: 0 0 20px var(--neon-pink);
+    margin-bottom: 1rem;
+  }
+  .overlay p { color: rgba(255,255,255,0.5); margin-bottom: 2rem; font-size: 1.1rem; }
+  .start-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: #000;
+    background: var(--neon-pink);
+    border: none;
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    box-shadow: 0 0 20px var(--neon-pink);
+    transition: all 0.2s;
+  }
+  .start-btn:hover { transform: scale(1.05); }
+  #timer-bar-wrap {
+    width: 372px;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  #timer-bar {
+    height: 100%;
+    background: var(--neon-pink);
+    box-shadow: 0 0 8px var(--neon-pink);
+    transition: width 0.1s linear, background 0.5s;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+<a href="/" class="back-btn">← ARCADE</a>
+<h1>MEMORY</h1>
+
+<div class="hud">
+  <div class="hud-item">
+    <div class="hud-val" id="moves">0</div>
+    <div class="hud-label">Moves</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-val" id="matched">0</div>
+    <div class="hud-label">Matched</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-val" id="time">60</div>
+    <div class="hud-label">Seconds</div>
+  </div>
+</div>
+
+<div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+<div class="grid" id="grid"></div>
+
+<div class="overlay" id="overlay">
+  <h2>MEMORY</h2>
+  <p>Match all pairs before time runs out!</p>
+  <button class="start-btn" id="startBtn">START GAME</button>
+</div>
+
+<script>
+const emojis = ['🔥','⚡','🌊','🌙','🎯','🚀','💎','👾'];
+let cards = [], flipped = [], moves = 0, matched = 0, lock = false;
+let timeLeft = 60, timerInt;
+
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  cards = shuffle([...emojis,...emojis]);
+  cards.forEach((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="card-face card-back"></div><div class="card-face card-front">${emoji}</div>`;
+    card.dataset.emoji = emoji;
+    card.addEventListener('click', () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+function flipCard(card) {
+  if (lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  flipped.push(card);
+  if (flipped.length === 2) {
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    lock = true;
+    if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+      flipped[0].classList.add('matched');
+      flipped[1].classList.add('matched');
+      flipped = []; lock = false;
+      matched++;
+      document.getElementById('matched').textContent = matched;
+      if (matched === 8) win();
+    } else {
+      setTimeout(() => {
+        flipped.forEach(c => c.classList.remove('flipped'));
+        flipped = []; lock = false;
+      }, 900);
+    }
+  }
+}
+
+function startTimer() {
+  timeLeft = 60;
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    document.getElementById('timer-bar').style.width = (timeLeft/60*100)+'%';
+    if (timeLeft <= 15) document.getElementById('timer-bar').style.background = '#ffbe0b';
+    if (timeLeft <= 0) { clearInterval(timerInt); lose(); }
+  }, 1000);
+}
+
+function win() {
+  clearInterval(timerInt);
+  showOverlay('YOU WIN! 🎉', `Completed in ${moves} moves!`, 'PLAY AGAIN');
+}
+function lose() {
+  showOverlay('TIME UP!', `You matched ${matched} of 8 pairs.`, 'TRY AGAIN');
+}
+
+function showOverlay(title, sub, btn) {
+  document.getElementById('overlay').querySelector('h2').textContent = title;
+  document.getElementById('overlay').querySelector('p').textContent = sub;
+  document.getElementById('startBtn').textContent = btn;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  moves = 0; matched = 0; flipped = []; lock = false;
+  document.getElementById('moves').textContent = 0;
+  document.getElementById('matched').textContent = 0;
+  document.getElementById('timer-bar').style.background = 'var(--neon-pink)';
+  document.getElementById('overlay').style.display = 'none';
+  buildGrid();
+  startTimer();
+});
+</script>
+</body>
+</html>

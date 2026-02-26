@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>គណិតវិទ្យា ប្លីត — NEONarcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Hanuman:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-green:#39ff14; --neon-cyan:#00f5ff; --neon-pink:#ff006e;
+    --neon-yellow:#ffbe0b; --neon-orange:#ff8c00; --neon-purple:#bf5fff;
+    --bg:#020408; --card:#080d14; --border:#0f1e2e; --accent:#39ff14;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:#fff;font-family:'Hanuman',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(57,255,20,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(57,255,20,0.025) 1px,transparent 1px);background-size:35px 35px;pointer-events:none;z-index:0;}
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:1000;}
+
+  .topbar{width:100%;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);position:relative;z-index:10;}
+  .back-btn{color:var(--neon-green);text-decoration:none;font-family:'Orbitron',monospace;font-size:0.65rem;letter-spacing:2px;border:1px solid rgba(57,255,20,0.3);padding:0.45rem 1rem;transition:all 0.2s;}
+  .back-btn:hover{background:rgba(57,255,20,0.08);}
+  .logo{font-family:'Hanuman',sans-serif;font-size:1.2rem;font-weight:900;letter-spacing:2px;color:var(--neon-green);text-shadow:0 0 15px var(--neon-green);}
+  .logo span{color:rgba(255,255,255,0.3);}
+
+  /* LEVEL SELECT */
+  #levelSelectScreen{width:100%;max-width:950px;padding:2rem 2rem 4rem;position:relative;z-index:5;}
+  .screen-title{font-family:'Hanuman',sans-serif;font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;text-align:center;margin-bottom:0.5rem;background:linear-gradient(90deg,var(--neon-green),var(--neon-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .screen-sub{text-align:center;color:rgba(255,255,255,0.3);letter-spacing:2px;font-size:0.9rem;margin-bottom:2.5rem;}
+  .tier-section{margin-bottom:1.8rem;}
+  .tier-label{font-family:'Hanuman',sans-serif;font-size:0.8rem;letter-spacing:1px;padding:0.3rem 1rem;margin-bottom:0.8rem;display:inline-block;border-left:3px solid;}
+  .tier-beginner .tier-label{color:var(--neon-green);border-color:var(--neon-green);}
+  .tier-easy .tier-label{color:var(--neon-cyan);border-color:var(--neon-cyan);}
+  .tier-medium .tier-label{color:var(--neon-yellow);border-color:var(--neon-yellow);}
+  .tier-hard .tier-label{color:var(--neon-orange);border-color:var(--neon-orange);}
+  .tier-expert .tier-label{color:var(--neon-pink);border-color:var(--neon-pink);}
+  .tier-master .tier-label{color:var(--neon-purple);border-color:var(--neon-purple);}
+  .tier-legendary .tier-label{color:#fff;border-color:#fff;}
+  .levels-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .lvl-btn{width:46px;height:46px;background:var(--card);border:1px solid var(--border);color:rgba(255,255,255,0.4);font-family:'Orbitron',monospace;font-size:0.65rem;font-weight:700;cursor:pointer;transition:all 0.15s;position:relative;display:flex;align-items:center;justify-content:center;}
+  .lvl-btn:hover{transform:scale(1.12);z-index:2;}
+  .lvl-btn.tier-beginner-btn:hover{border-color:var(--neon-green);color:var(--neon-green);box-shadow:0 0 12px rgba(57,255,20,0.4);}
+  .lvl-btn.tier-easy-btn:hover{border-color:var(--neon-cyan);color:var(--neon-cyan);box-shadow:0 0 12px rgba(0,245,255,0.4);}
+  .lvl-btn.tier-medium-btn:hover{border-color:var(--neon-yellow);color:var(--neon-yellow);box-shadow:0 0 12px rgba(255,190,11,0.4);}
+  .lvl-btn.tier-hard-btn:hover{border-color:var(--neon-orange);color:var(--neon-orange);box-shadow:0 0 12px rgba(255,140,0,0.4);}
+  .lvl-btn.tier-expert-btn:hover{border-color:var(--neon-pink);color:var(--neon-pink);box-shadow:0 0 12px rgba(255,0,110,0.4);}
+  .lvl-btn.tier-master-btn:hover{border-color:var(--neon-purple);color:var(--neon-purple);box-shadow:0 0 12px rgba(191,95,255,0.4);}
+  .lvl-btn.tier-legendary-btn:hover{border-color:#fff;color:#fff;box-shadow:0 0 12px rgba(255,255,255,0.4);}
+  .lvl-btn.completed{border-color:var(--neon-green)!important;background:rgba(57,255,20,0.07);color:var(--neon-green)!important;}
+  .lvl-btn.completed::after{content:'✓';position:absolute;top:1px;right:3px;font-size:8px;color:var(--neon-green);font-family:sans-serif;}
+
+  /* GAME */
+  #gameScreen{display:none;width:100%;max-width:720px;padding:1.5rem 2rem 3rem;position:relative;z-index:5;flex-direction:column;align-items:center;}
+  .game-header{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.8rem;}
+  .level-badge{font-family:'Hanuman',sans-serif;font-size:0.9rem;letter-spacing:2px;padding:0.4rem 1rem;border:1px solid var(--accent);color:var(--accent);text-shadow:0 0 8px var(--accent);}
+  .game-stats{display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;}
+  .stat-pill{text-align:center;}
+  .stat-val{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;color:var(--accent);text-shadow:0 0 10px var(--accent);display:block;}
+  .stat-lbl{font-size:0.68rem;color:rgba(255,255,255,0.25);font-family:'Hanuman',sans-serif;}
+
+  /* 5-MIN COUNTDOWN */
+  .countdown-wrap{width:100%;background:var(--card);border:1px solid var(--border);border-top:3px solid var(--accent);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;gap:1.2rem;}
+  .countdown-left{display:flex;flex-direction:column;}
+  .countdown-label{font-family:'Hanuman',sans-serif;font-size:0.75rem;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:0.2rem;}
+  .countdown-time{font-family:'Orbitron',monospace;font-size:2.8rem;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);letter-spacing:4px;line-height:1;transition:color 0.3s;}
+  .countdown-time.warning{color:var(--neon-yellow);text-shadow:0 0 20px var(--neon-yellow);}
+  .countdown-time.danger{color:var(--neon-pink);text-shadow:0 0 20px var(--neon-pink);animation:blink 0.5s ease infinite alternate;}
+  @keyframes blink{from{opacity:0.6}to{opacity:1}}
+  .countdown-bar-wrap{flex:1;height:10px;background:rgba(255,255,255,0.06);}
+  .countdown-bar{height:100%;background:var(--accent);box-shadow:0 0 10px var(--accent);transition:width 0.8s linear,background 0.4s;}
+
+  .progress-wrap{width:100%;height:5px;background:rgba(255,255,255,0.05);margin-bottom:1rem;position:relative;}
+  .progress-bar{height:100%;background:var(--accent);box-shadow:0 0 6px var(--accent);transition:width 0.3s ease;}
+  .progress-text{position:absolute;right:0;top:-18px;font-size:0.6rem;color:rgba(255,255,255,0.3);font-family:'Orbitron',monospace;}
+
+  .streak-display{font-family:'Hanuman',sans-serif;font-size:0.85rem;color:rgba(255,255,255,0.25);text-align:center;margin-bottom:0.8rem;}
+  .streak-display.hot{color:var(--neon-orange);text-shadow:0 0 8px var(--neon-orange);animation:pulse 0.5s ease infinite alternate;}
+  @keyframes pulse{from{opacity:0.7}to{opacity:1}}
+
+  .question-type-tag{font-family:'Hanuman',sans-serif;font-size:0.8rem;color:rgba(255,255,255,0.25);margin-bottom:0.6rem;text-align:center;}
+  .question-box{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent);width:100%;padding:2rem;text-align:center;margin-bottom:1.2rem;position:relative;overflow:hidden;}
+  .question-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center top,rgba(57,255,20,0.04) 0%,transparent 70%);}
+  .question-text{font-family:'Share Tech Mono',monospace;font-size:clamp(1.4rem,4vw,2.5rem);color:#fff;line-height:1.4;letter-spacing:2px;position:relative;z-index:1;white-space:pre-wrap;word-break:break-word;}
+  .question-hint{margin-top:0.7rem;font-size:0.9rem;color:rgba(255,255,255,0.3);font-family:'Hanuman',sans-serif;position:relative;z-index:1;}
+
+  .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:1.2rem;}
+  .option-btn{background:var(--card);border:1px solid var(--border);color:rgba(255,255,255,0.7);font-family:'Share Tech Mono',monospace;font-size:1.2rem;padding:1rem;cursor:pointer;transition:all 0.15s;text-align:center;}
+  .option-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);background:rgba(57,255,20,0.05);transform:scale(1.02);}
+  .option-btn.correct{border-color:var(--neon-green)!important;background:rgba(57,255,20,0.15)!important;color:var(--neon-green)!important;box-shadow:0 0 20px rgba(57,255,20,0.3);}
+  .option-btn.wrong{border-color:var(--neon-pink)!important;background:rgba(255,0,110,0.12)!important;color:var(--neon-pink)!important;}
+
+  .input-row{display:flex;gap:10px;width:100%;margin-bottom:1.2rem;}
+  .answer-input{flex:1;background:var(--card);border:1px solid var(--border);border-top:2px solid var(--accent);color:#fff;font-family:'Share Tech Mono',monospace;font-size:1.6rem;padding:0.8rem 1.2rem;outline:none;text-align:center;letter-spacing:3px;transition:border-color 0.2s;}
+  .answer-input:focus{border-color:var(--accent);box-shadow:0 0 15px rgba(57,255,20,0.15);}
+  .answer-input.shake{animation:shake 0.4s ease;}
+  .answer-input.correct-flash{border-color:var(--neon-green);background:rgba(57,255,20,0.08);}
+  .answer-input.wrong-flash{border-color:var(--neon-pink);background:rgba(255,0,110,0.08);}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+  .submit-btn{font-family:'Hanuman',sans-serif;font-size:1.05rem;font-weight:700;color:#000;background:var(--accent);border:none;padding:0 2rem;cursor:pointer;transition:all 0.15s;box-shadow:0 0 15px rgba(57,255,20,0.4);}
+  .submit-btn:hover{transform:scale(1.05);box-shadow:0 0 25px rgba(57,255,20,0.6);}
+
+  .feedback{font-family:'Hanuman',sans-serif;font-size:1rem;height:28px;text-align:center;margin-bottom:0.8rem;}
+  .feedback.correct-fb{color:var(--neon-green);text-shadow:0 0 12px var(--neon-green);}
+  .feedback.wrong-fb{color:var(--neon-pink);text-shadow:0 0 12px var(--neon-pink);}
+
+  /* OVERLAYS */
+  .overlay-screen{display:none;position:fixed;inset:0;background:rgba(2,4,8,0.95);z-index:200;flex-direction:column;align-items:center;justify-content:center;}
+  .complete-card{background:var(--card);border:1px solid var(--accent);box-shadow:0 0 60px rgba(57,255,20,0.12);padding:2.5rem 3rem;text-align:center;max-width:500px;width:92%;}
+  .complete-icon{font-size:3.5rem;margin-bottom:0.8rem;}
+  .complete-title{font-family:'Hanuman',sans-serif;font-size:1.8rem;font-weight:900;letter-spacing:2px;margin-bottom:0.4rem;color:var(--accent);text-shadow:0 0 20px var(--accent);}
+  .complete-sub{color:rgba(255,255,255,0.4);font-size:0.95rem;margin-bottom:0.5rem;font-family:'Hanuman',sans-serif;}
+  .stars{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1rem;font-size:2rem;}
+  .complete-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin:1.2rem 0;padding:1rem;border:1px solid var(--border);background:rgba(0,0,0,0.3);}
+  .c-stat-val{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;color:var(--accent);display:block;}
+  .c-stat-lbl{font-size:0.72rem;color:rgba(255,255,255,0.3);font-family:'Hanuman',sans-serif;}
+  .complete-btns{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;}
+  .c-btn{font-family:'Hanuman',sans-serif;font-size:1rem;font-weight:700;padding:0.65rem 1.5rem;cursor:pointer;border:1px solid;background:transparent;transition:all 0.2s;}
+  .c-btn-primary{color:#000;background:var(--accent);border-color:var(--accent);box-shadow:0 0 15px rgba(57,255,20,0.35);}
+  .c-btn-primary:hover{box-shadow:0 0 25px rgba(57,255,20,0.55);transform:scale(1.04);}
+  .c-btn-secondary{color:rgba(255,255,255,0.5);border-color:var(--border);}
+  .c-btn-secondary:hover{border-color:rgba(255,255,255,0.3);color:#fff;}
+
+  .particle{position:fixed;pointer-events:none;z-index:300;font-size:1.5rem;animation:pop-particle 0.8s ease forwards;top:50%;left:50%;}
+  @keyframes pop-particle{0%{transform:translate(0,0) scale(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
+  ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--neon-green);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="back-btn">← ត្រឡប់</a>
+  <div class="logo">គណិតវិទ្យា <span>ប្លីត</span></div>
+  <div style="font-family:'Hanuman',sans-serif;font-size:0.78rem;color:rgba(255,255,255,0.2);">១០០ កម្រិត</div>
+</div>
+
+<!-- ══ ជ្រើសរើសកម្រិត ══ -->
+<div id="levelSelectScreen">
+  <div class="screen-title">ជ្រើសរើសកម្រិត</div>
+  <div class="screen-sub">១០០ ការប្រកួត · ៧ ថ្នាក់ · ពេលវេលា ៥ នាទីក្នុងកម្រិត</div>
+
+  <div class="tier-section tier-beginner">
+    <div class="tier-label">⬡ ថ្នាក់ I — អ្នកចាប់ផ្ដើម (១–១០) · ការបូក និងការដក</div>
+    <div class="levels-row" id="tier1"></div>
+  </div>
+  <div class="tier-section tier-easy">
+    <div class="tier-label">⬡ ថ្នាក់ II — អ្នករៀន (១១–២០) · ការគុណ និងការចែក</div>
+    <div class="levels-row" id="tier2"></div>
+  </div>
+  <div class="tier-section tier-medium">
+    <div class="tier-label">⬡ ថ្នាក់ III — ប្រមាណវិធីរួម (២១–៣៥) · ប្រមាណ ភាគ ទសភាគ</div>
+    <div class="levels-row" id="tier3"></div>
+  </div>
+  <div class="tier-section tier-hard">
+    <div class="tier-label">⬡ ថ្នាក់ IV — អំណាច និងអាល់ហ្សេប្រ (៣៦–៥៥)</div>
+    <div class="levels-row" id="tier4"></div>
+  </div>
+  <div class="tier-section tier-expert">
+    <div class="tier-label">⬡ ថ្នាក់ V — រូបមិតិ ភាគរយ ការគណនាពិត (៥៦–៧០)</div>
+    <div class="levels-row" id="tier5"></div>
+  </div>
+  <div class="tier-section tier-master">
+    <div class="tier-label">⬡ ថ្នាក់ VI — លំដាប់ ចំនួនបឋម តក្ក (៧១–៨៥)</div>
+    <div class="levels-row" id="tier6"></div>
+  </div>
+  <div class="tier-section tier-legendary">
+    <div class="tier-label">⬡ ថ្នាក់ VII — វីរបុរស គណិតច្រើនជំហាន (៨៦–១០០)</div>
+    <div class="levels-row" id="tier7"></div>
+  </div>
+</div>
+
+<!-- ══ ហ្គេម ══ -->
+<div id="gameScreen">
+  <div class="game-header">
+    <div class="level-badge" id="levelBadge">កម្រិត ១</div>
+    <div class="game-stats">
+      <div class="stat-pill"><span class="stat-val" id="scoreVal">0</span><span class="stat-lbl">ពិន្ទុ</span></div>
+      <div class="stat-pill"><span class="stat-val" id="livesVal">♥♥♥</span><span class="stat-lbl">ជីវិត</span></div>
+      <div class="stat-pill"><span class="stat-val" id="questionNum">0/10</span><span class="stat-lbl">សំណួរ</span></div>
+    </div>
+  </div>
+
+  <!-- ⏱ ប្រអប់ ៥ នាទី -->
+  <div class="countdown-wrap">
+    <div class="countdown-left">
+      <div class="countdown-label">⏱ ពេលវេលានៅសល់</div>
+      <div class="countdown-time" id="countdownTime">05:00</div>
+    </div>
+    <div class="countdown-bar-wrap">
+      <div class="countdown-bar" id="countdownBar" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <span class="progress-text" id="progressText">0%</span>
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div class="streak-display" id="streakDisplay">ការបន្ត: ០</div>
+
+  <div class="question-type-tag" id="questionTypeTag">ប្រភេទ</div>
+
+  <div class="question-box">
+    <div class="question-text" id="questionText">កំពុងផ្ទុក...</div>
+    <div class="question-hint" id="questionHint"></div>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="options-grid" id="optionsGrid" style="display:none"></div>
+
+  <div class="input-row" id="inputRow">
+    <input class="answer-input" id="answerInput" type="text" inputmode="decimal" placeholder="???" autocomplete="off"/>
+    <button class="submit-btn" id="submitBtn">យល់ព្រម</button>
+  </div>
+</div>
+
+<!-- ══ ជ័យជម្នះ ══ -->
+<div id="levelComplete" class="overlay-screen">
+  <div class="complete-card">
+    <div class="complete-icon">🏆</div>
+    <div class="complete-title" id="completeTitle">កម្រិតជ្រះ!</div>
+    <div class="complete-sub" id="completeMsg">ល្អណាស់!</div>
+    <div class="stars" id="completeStars">⭐⭐⭐</div>
+    <div class="complete-stats">
+      <div><span class="c-stat-val" id="cScore">0</span><span class="c-stat-lbl">ពិន្ទុ</span></div>
+      <div><span class="c-stat-val" id="cAccuracy">0%</span><span class="c-stat-lbl">ភាពត្រឹមត្រូវ</span></div>
+      <div><span class="c-stat-val" id="cBestStreak">0</span><span class="c-stat-lbl">ការបន្តល្អ</span></div>
+    </div>
+    <div class="complete-btns">
+      <button class="c-btn c-btn-secondary" onclick="exitToMenu()">ម៉ឺនុយ</button>
+      <button class="c-btn c-btn-primary" id="nextLevelBtn" onclick="nextLevel()">កម្រិតបន្ទាប់ →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ចាញ់ ══ -->
+<div id="gameOver" class="overlay-screen">
+  <div class="complete-card" style="border-color:var(--neon-pink);box-shadow:0 0 60px rgba(255,0,110,0.15)">
+    <div class="complete-icon">💀</div>
+    <div class="complete-title" style="color:var(--neon-pink);text-shadow:0 0 20px var(--neon-pink)" id="gameOverTitle">ហ្គេមចប់!</div>
+    <div class="complete-sub" id="gameOverMsg">ជីវិត ឬ ពេលវេលាអស់!</div>
+    <div class="complete-stats">
+      <div><span class="c-stat-val" style="color:var(--neon-pink)" id="goScore">0</span><span class="c-stat-lbl">ពិន្ទុ</span></div>
+      <div><span class="c-stat-val" style="color:var(--neon-pink)" id="goAccuracy">0%</span><span class="c-stat-lbl">ភាពត្រឹមត្រូវ</span></div>
+      <div><span class="c-stat-val" style="color:var(--neon-pink)" id="goStreak">0</span><span class="c-stat-lbl">ការបន្តល្អ</span></div>
+    </div>
+    <div class="complete-btns">
+      <button class="c-btn c-btn-secondary" onclick="exitToMenu()">ម៉ឺនុយ</button>
+      <button class="c-btn" style="color:#000;background:var(--neon-pink);border-color:var(--neon-pink);box-shadow:0 0 15px rgba(255,0,110,0.4);" onclick="retryLevel()">សាកម្ដងទៀត</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const TIER_CFG = [
+  {cls:'tier-beginner-btn',levels:[1,10], c:'tier1'},
+  {cls:'tier-easy-btn',    levels:[11,20],c:'tier2'},
+  {cls:'tier-medium-btn',  levels:[21,35],c:'tier3'},
+  {cls:'tier-hard-btn',    levels:[36,55],c:'tier4'},
+  {cls:'tier-expert-btn',  levels:[56,70],c:'tier5'},
+  {cls:'tier-master-btn',  levels:[71,85],c:'tier6'},
+  {cls:'tier-legendary-btn',levels:[86,100],c:'tier7'},
+];
+const ACCENT_MAP={1:'#39ff14',11:'#00f5ff',21:'#ffbe0b',36:'#ff8c00',56:'#ff006e',71:'#bf5fff',86:'#ffffff'};
+function getAccent(l){let c='#39ff14';for(const[k,v]of Object.entries(ACCENT_MAP))if(l>=+k)c=v;return c;}
+
+let completed={};
+try{completed=JSON.parse(localStorage.getItem('mathKhmer100')||'{}');}catch(e){}
+
+function buildLevelSelect(){
+  TIER_CFG.forEach(t=>{
+    const cont=document.getElementById(t.c);
+    for(let l=t.levels[0];l<=t.levels[1];l++){
+      const b=document.createElement('button');
+      b.className=`lvl-btn ${t.cls}`;b.textContent=l;
+      if(completed[l])b.classList.add('completed');
+      b.onclick=()=>startLevel(l);
+      cont.appendChild(b);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// MATH HELPERS
+// ═══════════════════════════════════════════════
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const randF=(a,b,d=1)=>parseFloat((Math.random()*(b-a)+a).toFixed(d));
+const choice=arr=>arr[Math.floor(Math.random()*arr.length)];
+const gcd=(a,b)=>b===0?a:gcd(b,a%b);
+const isPrime=n=>{if(n<2)return false;for(let i=2;i<=Math.sqrt(n);i++)if(n%i===0)return false;return true;};
+const nthPrime=n=>{let c=0,i=1;while(c<n){i++;if(isPrime(i))c++;}return i;};
+
+// ═══════════════════════════════════════════════
+// 100-LEVEL QUESTION GENERATOR (ភាសាខ្មែរ)
+// ═══════════════════════════════════════════════
+function generateQuestion(L){
+  let q='',ans=0,hint='',type='',mcq=false;
+
+  if(L===1){type='ការបូក';let a=rand(1,10),b=rand(1,10);q=`${a} + ${b} = ?`;ans=a+b;}
+  else if(L===2){type='ការដក';let a=rand(5,20),b=rand(1,a);q=`${a} − ${b} = ?`;ans=a-b;}
+  else if(L===3){type='ការបូក';let a=rand(10,50),b=rand(10,50);q=`${a} + ${b} = ?`;ans=a+b;}
+  else if(L===4){type='ការដក';let a=rand(20,100),b=rand(1,a);q=`${a} − ${b} = ?`;ans=a-b;}
+  else if(L===5){type='ការបូក';let a=rand(50,200),b=rand(50,200);q=`${a} + ${b} = ?`;ans=a+b;}
+  else if(L===6){type='បូក និង ដក';let a=rand(10,50),b=rand(1,30),c=rand(1,20);q=`${a} + ${b} − ${c} = ?`;ans=a+b-c;}
+  else if(L===7){type='ការដក';let a=rand(100,500),b=rand(10,100);q=`${a} − ${b} = ?`;ans=a-b;}
+  else if(L===8){type='ការបូក';let a=rand(100,999),b=rand(100,999);q=`${a} + ${b} = ?`;ans=a+b;}
+  else if(L===9){type='បូកច្រើន';let a=rand(5,20),b=rand(5,20),c=rand(5,20),d=rand(5,20);q=`${a} + ${b} + ${c} + ${d} = ?`;ans=a+b+c+d;hint='បូកម្ដងមួយៗ';}
+  else if(L===10){type='ចន្លោះ';mcq=true;let a=rand(10,50),b=rand(10,50);q=`${a} + ___ = ${a+b}`;ans=b;hint='តើចំនួរអ្វី?';}
+
+  else if(L===11){type='ការគុណ';let a=rand(2,9),b=rand(2,9);q=`${a} × ${b} = ?`;ans=a*b;}
+  else if(L===12){type='ការចែក';let b=rand(2,9),q2=rand(2,9);q=`${b*q2} ÷ ${b} = ?`;ans=q2;}
+  else if(L===13){type='តារាងគុណ';mcq=true;let a=rand(6,12),b=rand(6,12);q=`${a} × ${b} = ?`;ans=a*b;}
+  else if(L===14){type='ការចែក';let a=rand(2,12),b=rand(10,20);q=`${a*b} ÷ ${a} = ?`;ans=b;}
+  else if(L===15){type='គុណ ÷ ចែក';let a=rand(3,9),b=rand(3,9),c=rand(2,5);let r=a*b/c;if(!Number.isInteger(r)){a=c*rand(2,5);r=a*b/c;}q=`${a} × ${b} ÷ ${c} = ?`;ans=r;}
+  else if(L===16){type='ការគុណ';let a=rand(11,25),b=rand(2,9);q=`${a} × ${b} = ?`;ans=a*b;}
+  else if(L===17){type='គុណ ៣ ខ្ទង់';let a=rand(100,300),b=rand(2,9);q=`${a} × ${b} = ?`;ans=a*b;}
+  else if(L===18){type='សំណល់';mcq=true;let a=rand(2,9),b=rand(10,50);q=`${b} ÷ ${a} — សំណល់?`;ans=b%a;hint='តើអ្វីនៅសល់?';}
+  else if(L===19){type='ចំនួរ';mcq=true;let n=rand(12,60);let ct=0;for(let i=1;i<=n;i++)if(n%i===0)ct++;q=`${n} មានចំនួរ\nប៉ុន្មាន?`;ans=ct;hint='រាប់ចំនួរទាំងអស់ដែលចែកបាន';}
+  else if(L===20){type='គុណ ២×២';let a=rand(12,30),b=rand(12,30);q=`${a} × ${b} = ?`;ans=a*b;}
+
+  else if(L===21){type='លំដាប់ប្រមាណ';let a=rand(2,9),b=rand(2,9),c=rand(1,9);q=`${a} + ${b} × ${c} = ?`;ans=a+b*c;hint='គុណសិន ហើយបូក';}
+  else if(L===22){type='វង់ក្រចក';let a=rand(2,10),b=rand(2,10),c=rand(1,5);q=`(${a} + ${b}) × ${c} = ?`;ans=(a+b)*c;}
+  else if(L===23){type='ភាគ + ភាគ';mcq=true;let d=choice([2,3,4,5,6,8,10]),n1=rand(1,d-1),n2=rand(1,d-1);let num=n1+n2,den=d,g=gcd(num,den);num/=g;den/=g;q=`${n1}/${d} + ${n2}/${d} = ?`;ans=`${num}/${den}`;hint='បូកតម្លៃខាងលើ';}
+  else if(L===24){type='ភាគ × ភាគ';mcq=true;let a1=rand(1,5),b1=rand(2,6),a2=rand(1,5),b2=rand(2,6);let num=a1*a2,den=b1*b2,g=gcd(num,den);num/=g;den/=g;q=`${a1}/${b1} × ${a2}/${b2} = ?`;ans=`${num}/${den}`;hint='គុណលើ × លើ ក្រោម × ក្រោម';}
+  else if(L===25){type='BODMAS';let a=rand(2,8),b=rand(2,6),c=rand(1,6),d=rand(1,4);q=`${a}×${b} + ${c}×${d} = ?`;ans=a*b+c*d;}
+  else if(L===26){type='វង់ក្រចក';let a=rand(10,30),b=rand(5,20),c=rand(2,6);q=`(${a} − ${b}) × ${c} = ?`;ans=(a-b)*c;}
+  else if(L===27){type='ភាគស្មើ';mcq=true;let w=rand(1,4),n=rand(1,3),d=choice([4,5,6,8]);q=`${w} + ${n}/${d} = ?`;ans=`${w*d+n}/${d}`;hint='បំលែងជាភាគមិនត្រឹម';}
+  else if(L===28){type='LCM';mcq=true;let a=choice([2,3,4,5,6]),b=choice([3,4,5,6,8]);q=`LCM នៃ ${a} និង ${b}?`;ans=a*b/gcd(a,b);hint='ចំនួនគូរតូចបំផុតរួម';}
+  else if(L===29){type='GCD';mcq=true;let a=choice([12,18,24,30,36,48]),b=choice([6,8,10,12,15,20]);q=`GCD នៃ ${a} និង ${b}?`;ans=gcd(a,b);hint='ឆ្លើយធំបំផុតរួម';}
+  else if(L===30){type='ច្រវ៉ាក់ ៣ ជំហាន';let a=rand(2,8),b=rand(2,8),c=rand(2,5),d=rand(1,10),e=rand(1,10);q=`${a}×${b} + ${c}×${d} − ${e} = ?`;ans=a*b+c*d-e;}
+  else if(L===31){type='ទសភាគ +';let a=randF(1,20,1),b=randF(1,20,1);q=`${a} + ${b} = ?`;ans=parseFloat((a+b).toFixed(1));}
+  else if(L===32){type='ទសភាគ ×';let a=rand(2,9),b=randF(0.1,0.9,1);q=`${a} × ${b} = ?`;ans=parseFloat((a*b).toFixed(2));hint='គិតខ្ទង់ទសភាគ';}
+  else if(L===33){type='អវិជ្ជមាន +';mcq=true;let a=rand(-15,-1),b=rand(-10,15);q=`${a} + (${b}) = ?`;ans=a+b;hint='ប្រយ័ត្នចំពោះ −!';}
+  else if(L===34){type='អវិជ្ជមាន ×';mcq=true;let a=rand(-9,-1),b=rand(2,9);q=`${a} × ${b} = ?`;ans=a*b;}
+  else if(L===35){type='ប្រព័ន្ធផ្សំ';let a=rand(2,6),b=rand(2,6),c=rand(10,30),e=rand(2,8);q=`${c} + ${a}×${b} − ${e} = ?`;ans=c+a*b-e;}
+
+  else if(L===36){type='ការក្រឡា²';mcq=true;let a=rand(2,12);q=`${a}² = ?`;ans=a*a;}
+  else if(L===37){type='ការឡើង³';mcq=true;let a=rand(2,8);q=`${a}³ = ?`;ans=a*a*a;}
+  else if(L===38){type='ឫស√';mcq=true;let a=choice([1,4,9,16,25,36,49,64,81,100,121,144]);q=`√${a} = ?`;ans=Math.sqrt(a);}
+  else if(L===39){type='អំណាច ២^n';mcq=true;let n=rand(1,10);q=`2^${n} = ?`;ans=Math.pow(2,n);}
+  else if(L===40){type='អំណាច ៣^n';mcq=true;let n=rand(1,6);q=`3^${n} = ?`;ans=Math.pow(3,n);}
+  else if(L===41){type='អាល់ហ្សេប្រ';let a=rand(2,9),b=rand(1,20),x=rand(1,15);q=`${a}x + ${b} = ${a*x+b}\nx = ?`;ans=x;hint='ញែក x ឯកោ';}
+  else if(L===42){type='អាល់ហ្សេប្រ −';let a=rand(2,8),b=rand(1,10),x=rand(2,15);q=`${a}x − ${b} = ${a*x-b}\nx = ?`;ans=x;}
+  else if(L===43){type='អាល់ហ្សេប្រ ÷';let a=rand(2,9),x=rand(5,30);q=`x ÷ ${a} = ${x}\nx = ?`;ans=a*x;hint='គុណ ២ ភាគ ដោយ '+a;}
+  else if(L===44){type='អាល់ហ្សេប្រ ២ ជំហាន';let a=rand(2,5),b=rand(2,8),x=rand(2,10);q=`${a}x + ${b} = ${a*x+b}\nx = ?`;ans=x;}
+  else if(L===45){type='ឫស ×២';let a=choice([1,4,9,16,25,36,49,64,81,100]);q=`√${a} + √${a} = ?`;ans=2*Math.sqrt(a);}
+  else if(L===46){type='ផ្ដេកអំណាច';let a=rand(2,5),b=rand(2,4),c=rand(1,3);q=`${a}^${b} × ${a}^${c} = ${a}^?\nផ្ដេក = ?`;ans=b+c;hint='បូកផ្ដេក';}
+  else if(L===47){type='ឫស³';mcq=true;let a=choice([1,8,27,64,125,216,343]);q=`∛${a} = ?`;ans=Math.round(Math.cbrt(a));hint='ចំនួរដែលឡើង ³?';}
+  else if(L===48){type='អំណាចដក';let a=rand(2,4),b=rand(2,3),c=rand(1,2);q=`${a}^${b} − ${a}^${c} = ?`;ans=Math.pow(a,b)-Math.pow(a,c);}
+  else if(L===49){type='អាល់ហ្សេប្រ ÷ + ';let a=rand(2,9),b=rand(1,5),x=rand(3,10);q=`(x + ${b}) ÷ ${a} = ${x}\nx = ?`;ans=a*x-b;hint='គុណសិន ហើយដក';}
+  else if(L===50){type='ក្រឡា × ២';mcq=true;let a=rand(3,9),b=rand(2,6);q=`${a}² + ${b}² = ?`;ans=a*a+b*b;hint='គណនារៀងៗ ហើយបូក';}
+  else if(L===51){type='ម.ស.ស. >';mcq=true;let a=rand(2,7),b=rand(10,40),x=rand(3,15);q=`${a}x + ${b} < ${a*x+b}\nx < ?`;ans=x;hint='ដោះដូចសមការ';}
+  else if(L===52){type='ភាពខុស ²';mcq=true;let a=rand(3,9),b=rand(1,a-1);q=`${a}² − ${b}² = ?`;ans=a*a-b*b;}
+  else if(L===53){type='ចំនួនវិទ្យា';mcq=true;let a=rand(1,9),n=rand(2,5);q=`${a} × 10^${n} = ?`;ans=a*Math.pow(10,n);hint='ប្ដូរទសភាគ';}
+  else if(L===54){type='អាល់ហ្សេប្រ ២ អ្វី';let a=rand(2,6),b=rand(1,5),x=rand(1,8),y=rand(1,5);q=`y = ${y}, រក x:\n${a}x + ${b}×${y} = ${a*x+b*y}`;ans=x;hint='ដាក់ y ជាមុន';}
+  else if(L===55){type='ផ្ដេករង';let b=rand(2,3),x=rand(2,4),y=rand(1,3);q=`(${b}^${x})^${y} = ${b}^?\nផ្ដេក = ?`;ans=x*y;hint='គុណផ្ដេក';}
+
+  else if(L===56){type='ភាគរយ';mcq=true;let p=choice([10,20,25,50]),n=rand(20,200);q=`${p}% នៃ ${n} = ?`;ans=n*p/100;}
+  else if(L===57){type='ផ្ទៃ ចតុកោណ';let w=rand(4,20),h=rand(4,20);q=`ផ្ទៃ ${w}×${h} ចតុកោណ?`;ans=w*h;hint='ផ្ទៃ = ប្រវែង × ទទឹង';}
+  else if(L===58){type='ប្រវែងជុំ';let w=rand(4,20),h=rand(4,20);q=`P នៃ ${w}×${h}?`;ans=2*(w+h);hint='P = 2(l+w)';}
+  else if(L===59){type='ផ្ទៃ ○';mcq=true;let r=rand(1,8);q=`ផ្ទៃ○ r=${r}\n(π=3.14)`;ans=Math.round(3.14*r*r);hint='A = π×r²';}
+  else if(L===60){type='ផ្ទៃ △';mcq=true;let b=rand(4,20),h=rand(4,20);q=`ផ្ទៃ△ b=${b} h=${h}?`;ans=(b*h)/2;hint='A = ½×b×h';}
+  else if(L===61){type='ភាគរយ +';mcq=true;let o=choice([50,100,200,80,120]),p=choice([10,20,25,50]);q=`${o} + ${p}% = ?`;ans=o+o*p/100;hint='បូកភាគរយ';}
+  else if(L===62){type='ភាគរយ −';mcq=true;let o=choice([100,200,300,400,500]),p=choice([10,20,25,30,50]);q=`${o} − ${p}% = ?`;ans=o-o*p/100;}
+  else if(L===63){type='ចំណេញ/ខាត';mcq=true;let c=rand(50,200)*2,s=c+rand(10,80);q=`ថ្លៃ ${c}$ លក់ ${s}$\nចំណេញ = ?`;ans=s-c;}
+  else if(L===64){type='ពាក្យ: ចម្ងាយ';mcq=true;let sp=rand(30,80),t=rand(1,5);q=`${sp}km/h × ${t}h\nចម្ងាយ = ?`;ans=sp*t;hint='ចម្ងាយ = ល្បឿន × ពេល';}
+  else if(L===65){type='ចែករំលែក';mcq=true;let total=rand(100,500),each=choice([4,5,8,10,20,25]);q=`${total}$ ÷ ${each} នាក់\nម្នាក់ = ?`;ans=total/each;}
+  else if(L===66){type='ពីតាហ្គ័រ';mcq=true;let tr=choice([[3,4,5],[6,8,10],[5,12,13],[8,15,17]]);q=`△ a=${tr[0]}, b=${tr[1]}\nc = ?`;ans=tr[2];hint='a²+b²=c²';}
+  else if(L===67){type='មុំ ១៨០°';mcq=true;let a=rand(20,150);q=`${a}° + ___ = 180°\n___ = ?`;ans=180-a;}
+  else if(L===68){type='មុំ ៩០°';mcq=true;let a=rand(10,80);q=`${a}° + ___ = 90°\n___ = ?`;ans=90-a;}
+  else if(L===69){type='ទំហំ ប្រអប់';let l=rand(2,10),w=rand(2,10),h=rand(2,10);q=`V = ${l}×${w}×${h}?`;ans=l*w*h;hint='V = l×w×h';}
+  else if(L===70){type='ការប្រាក់ស្មុគ';mcq=true;let p=choice([50,100,200,400]),r=choice([10,20,50]),t=2;q=`${p}$ @ ${r}%/ឆ្នាំ\n${t}ឆ្នាំ = ?`;ans=Math.round(p*Math.pow(1+r/100,t));hint='A=P(1+r)^t';}
+
+  else if(L===71){type='ចំនួនបឋម?';mcq=true;let n=rand(50,150);q=`${n} ជាចំនួនបឋម?`;ans=isPrime(n)?1:0;hint='១=បាទ ០=ទេ';}
+  else if(L===72){type='ចំនួនបឋម ទី N';mcq=true;let n=rand(5,15);q=`ចំនួនបឋម ទី ${n} = ?`;ans=nthPrime(n);}
+  else if(L===73){type='ហ្វ៊ីបូណាជី';mcq=true;let fib=[1,1,2,3,5,8,13,21,34,55,89,144];let n=rand(4,10);q=`Fibonacci #${n+1}\n(1,1,2,3,5,...) = ?`;ans=fib[n];hint='ផ្ដួប = ២ ឃ្លាមុន';}
+  else if(L===74){type='លំដាប់ +';mcq=true;let a=rand(2,20),d=rand(2,10),n=rand(5,10);q=`${a}, ${a+d}, ${a+2*d},...\nឃ្លា ទី ${n} = ?`;ans=a+(n-1)*d;hint='a+(n-1)d';}
+  else if(L===75){type='លំដាប់ ×';mcq=true;let a=rand(2,5),r=rand(2,4);q=`${a}, ${a*r}, ${a*r*r},...\nបន្ទាប់ = ?`;ans=a*r*r*r;}
+  else if(L===76){type='mod';mcq=true;let a=rand(20,100),b=rand(3,12);q=`${a} mod ${b} = ?`;ans=a%b;hint='សំណល់ ÷';}
+  else if(L===77){type='ខ្ទង់បឋមធំ';mcq=true;let n=choice([12,18,24,30,36,48,60,72]);let mx=2;for(let i=2;i<=n;i++)if(n%i===0&&isPrime(i))mx=i;q=`ខ្ទង់បឋមធំ\nនៃ ${n} = ?`;ans=mx;}
+  else if(L===78){type='P(n,r)';mcq=true;let n=rand(3,6),r=2;let p=1;for(let i=n;i>n-r;i--)p*=i;q=`P(${n},${r}) = ?`;ans=p;hint='n×(n−1)';}
+  else if(L===79){type='C(n,2)';mcq=true;let n=rand(4,8);q=`C(${n},2) = ?`;ans=n*(n-1)/2;hint='n(n−1)/2';}
+  else if(L===80){type='ល្បែងតក្ក';mcq=true;let a=rand(2,8),b=rand(2,8);q=`A+B=${a+b}\nA×B=${a*b}\nA (តូច) = ?`;ans=Math.min(a,b);hint='ស្វែងរក ២ ចំនួរ';}
+  else if(L===81){type='លំដាប់ប្លែក';mcq=true;let a=rand(3,15),d1=rand(2,6),d2=rand(2,5);q=`${a}, ${a+d1}, ${a+d1+d2}, ${a+2*d1+d2},...\nបន្ទាប់?`;ans=a+2*d1+2*d2;hint='ភាពខុសផ្លាស់ប្ដូរ';}
+  else if(L===82){type='Binary';mcq=true;let n=rand(8,31);q=`${n} ជា binary = ?`;ans=parseInt(n.toString(2));hint='ចែក ២ ម្ដងៗ';}
+  else if(L===83){type='log';mcq=true;let b=choice([2,3,10]),n=choice([1,2,3,4]);q=`log₍${b}₎(${Math.pow(b,n)}) = ?`;ans=n;hint='b^? = n';}
+  else if(L===84){type='មធ្យម';let ns=[rand(10,50),rand(10,50),rand(10,50),rand(10,50),rand(10,50)];let mn=Math.round(ns.reduce((a,b)=>a+b,0)/ns.length);q=`មធ្យម:\n${ns.join(', ')}`;ans=mn;hint='ផ្ដួប ÷ ចំនួន';}
+  else if(L===85){type='ប្រូបាប';mcq=true;let t=choice([6,8,10,12,20]),f=rand(1,t-1);q=`${f} ក្នុង ${t}\nប្រូបាប % = ?`;ans=Math.round(f/t*100);hint='(f/t)×100';}
+
+  else if(L===86){type='ស.ម.ស្មើ ²';mcq=true;let p=rand(1,5),q2=rand(1,5);let b2=-(p+q2),c2=p*q2;q=`x²${b2>0?'+'+b2:b2}x${c2>0?'+'+c2:c2}=0\nដើម (តូច)?`;ans=Math.min(p,q2);hint='ពន្លាយ ឬ ប្រើរូបមន្ត';}
+  else if(L===87){type='ច្រើនជំហាន';let a=rand(2,6),b=rand(2,6),c=rand(2,8),d=rand(1,5);q=`${a}²×${b} + ${c}×${d}² = ?`;ans=a*a*b+c*d*d;}
+  else if(L===88){type='ពន្លាយ (ax+b)²';mcq=true;let a=rand(2,6),b=rand(1,5);q=`(${a}x+${b})²\nx ← ខ្ទង់?`;ans=2*a*b;hint='2ab';}
+  else if(L===89){type='ផ្ដួបក្រឡា';let n=rand(4,8);let s=0;for(let i=1;i<=n;i++)s+=i*i;q=`1²+2²+...+${n}² = ?`;ans=s;hint='គណនានីមួយៗ';}
+  else if(L===90){type='ម្ហូបច្របល់';let a=rand(2,5),b=rand(2,5),c=rand(2,4),d=rand(2,4),e=rand(1,5);q=`${a}³+${b}²×${c}−${d}×${e}=?`;ans=Math.pow(a,3)+b*b*c-d*e;}
+  else if(L===91){type='ផ្ដួបខ្ទង់';mcq=true;let n=rand(1000,9999);let ds=String(n).split('').reduce((s,c)=>s+parseInt(c),0);q=`ផ្ដួបខ្ទង់ ${n} = ?`;ans=ds;hint='បូកខ្ទង់ទាំងអស់';}
+  else if(L===92){type='ល្បឿន';mcq=true;let s=choice([30,40,50,60,80,100]),t=rand(2,6);q=`${s*t}km @ ${s}km/h\nពេល = ?`;ans=t;hint='ពេល=ចម្ងាយ÷ល្បឿន';}
+  else if(L===93){type='ស.ម. ២ ប្រភេទ';let x=rand(2,8),y=rand(2,6);q=`x+y=${x+y}\nx−y=${x-y}\nx=?`;ans=x;hint='បូក ២ ស.ម. ដើម្បីលុប y';}
+  else if(L===94){type='ភាគរយ ×២';mcq=true;let v=choice([200,400,500,1000]),p1=choice([10,20,25,50]),p2=choice([10,20,25,50]);q=`${v}$ +${p1}% ហើយ +${p2}%\n=?`;ans=Math.round(v*(1+p1/100)*(1+p2/100));}
+  else if(L===95){type='ផ្ដួបអនន្ត';mcq=true;let a=rand(2,8),rr=choice([0.5,0.25]);q=`${a}+${a*rr}+${a*rr*rr}...\n(ស.ម.អនន្ត)?`;ans=a/(1-rr);hint='S=a/(1−r)';}
+  else if(L===96){type='mod អំណាច';mcq=true;let b=rand(2,5),e=rand(3,6),m=choice([7,9,11,13]);q=`${b}^${e} mod ${m}=?`;ans=Math.pow(b,e)%m;hint='គណនា ហើយ mod';}
+  else if(L===97){type='ចំនួនត្រីកោណ';mcq=true;let n=rand(4,12);q=`1+2+...+${n}=?`;ans=n*(n+1)/2;hint='n(n+1)/2';}
+  else if(L===98){type='ប្រព័ន្ធម៉ុង';let a=rand(3,7),b=rand(2,5),d=rand(2,4),sub=rand(2,8),c2=d*rand(3,8);q=`√${a*a}×${b}²+${c2}÷${d}−${sub}=?`;ans=a*b*b+c2/d-sub;ans=Math.round(ans*100)/100;}
+  else if(L===99){type='អាល់ហ្សេប្រ ²';let a=rand(2,5),x=rand(3,10);q=`${a}x²=${a*x*x}\nx (វិជ្ជមាន)=?`;ans=x;hint='ចែក ហើយ √';}
+  else if(L===100){type='🔥 ចុងក្រោយ!';let a=rand(2,4),b=rand(2,4),x=rand(2,6),y=rand(2,6);q=`${a}x+${b}y=${a*x+b*y}\n${a}x−${b}y=${a*x-b*y}\nx+y=?`;ans=x+y;hint='ដោះ ហើយ បូក!';}
+
+  return{question:q,answer:ans,hint,type,mcq};
+}
+
+// ═══════════════════════════════════════════════
+// GAME STATE (5-min LEVEL timer)
+// ═══════════════════════════════════════════════
+const TOTAL_SECS = 300;
+let state={level:1,questionIdx:0,totalQ:10,score:0,lives:3,streak:0,bestStreak:0,correct:0,wrong:0,curQ:null,running:false,levelTimeLeft:TOTAL_SECS,levelTimerInt:null,locked:false};
+
+function updateHUD(){
+  document.getElementById('scoreVal').textContent=state.score;
+  document.getElementById('livesVal').textContent='♥'.repeat(state.lives)+'♡'.repeat(Math.max(0,3-state.lives));
+  document.getElementById('questionNum').textContent=`${state.questionIdx}/${state.totalQ}`;
+  const pct=Math.round(state.questionIdx/state.totalQ*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressText').textContent=pct+'%';
+  const sd=document.getElementById('streakDisplay');
+  sd.textContent=`ការបន្ត: ${state.streak}${state.streak>=5?' 🔥':''}`;
+  sd.className='streak-display'+(state.streak>=5?' hot':'');
+}
+
+function renderCountdown(){
+  const t=Math.max(0,state.levelTimeLeft);
+  const m=Math.floor(t/60).toString().padStart(2,'0');
+  const s=(t%60).toString().padStart(2,'0');
+  const el=document.getElementById('countdownTime');
+  el.textContent=`${m}:${s}`;
+  el.className='countdown-time'+(t<=30?' danger':t<=60?' warning':'');
+  const bar=document.getElementById('countdownBar');
+  bar.style.width=(t/TOTAL_SECS*100)+'%';
+  const col=t<=30?'var(--neon-pink)':t<=60?'var(--neon-yellow)':'var(--accent)';
+  bar.style.background=col;
+  bar.style.boxShadow=`0 0 10px ${col}`;
+}
+
+function startLevelTimer(){
+  clearInterval(state.levelTimerInt);
+  state.levelTimeLeft=TOTAL_SECS;
+  renderCountdown();
+  state.levelTimerInt=setInterval(()=>{
+    state.levelTimeLeft--;
+    renderCountdown();
+    if(state.levelTimeLeft<=0){clearInterval(state.levelTimerInt);onTimeOut();}
+  },1000);
+}
+
+function onTimeOut(){
+  if(!state.running)return;
+  state.running=false;
+  document.getElementById('gameOverTitle').textContent='ពេល ៥ នាទីអស់!';
+  document.getElementById('gameOverMsg').textContent='ចំណេញ: '+state.score+' ពិន្ទុ';
+  showGameOverPanel();
+}
+
+function startLevel(lvl){
+  state.level=lvl; state.questionIdx=0;
+  state.totalQ=lvl>=86?15:lvl>=71?12:10;
+  state.score=0; state.lives=lvl>=86?2:3;
+  state.streak=0; state.bestStreak=0; state.correct=0; state.wrong=0;
+  state.running=true; state.locked=false;
+
+  const ac=getAccent(lvl);
+  document.documentElement.style.setProperty('--accent',ac);
+
+  document.getElementById('levelSelectScreen').style.display='none';
+  document.getElementById('gameScreen').style.display='flex';
+  document.getElementById('levelBadge').textContent=`កម្រិត ${lvl}`;
+  updateHUD();
+  startLevelTimer();
+  nextQuestion();
+}
+
+function nextQuestion(){
+  if(!state.running)return;
+  if(state.questionIdx>=state.totalQ){levelComplete();return;}
+  state.locked=false;
+  state.curQ=generateQuestion(state.level);
+  const q=state.curQ;
+  document.getElementById('questionTypeTag').textContent=q.type;
+  document.getElementById('questionText').textContent=q.question;
+  document.getElementById('questionHint').textContent=q.hint||'';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('optionsGrid').style.display=q.mcq?'grid':'none';
+  document.getElementById('inputRow').style.display=q.mcq?'none':'flex';
+  if(q.mcq){buildOptions(q.answer);}
+  else{const inp=document.getElementById('answerInput');inp.value='';inp.className='answer-input';inp.disabled=false;setTimeout(()=>inp.focus(),50);}
+}
+
+function buildOptions(correct){
+  const grid=document.getElementById('optionsGrid');
+  grid.innerHTML='';
+  let ws=new Set();
+  while(ws.size<3){
+    let w;
+    if(typeof correct==='string'){const pt=correct.split('/');const n=parseInt(pt[0])+rand(-3,3);const d=parseInt(pt[1])+rand(-2,2);if(d>0&&n>0&&`${n}/${d}`!==correct)w=`${n}/${d}`;}
+    else if(Number.isInteger(correct)){const off=rand(1,Math.max(3,Math.abs(correct/3)|0||5));w=correct+choice([-1,1])*off;}
+    else{const off=randF(0.1,Math.abs(correct*0.3)+0.1);w=parseFloat((correct+choice([-1,1])*off).toFixed(2));}
+    if(w!==undefined&&w!==correct&&!ws.has(w))ws.add(w);
+  }
+  const opts=shuffle([correct,...ws]);
+  opts.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn';btn.textContent=opt;
+    btn.onclick=()=>checkMCQ(btn,opt,correct);
+    grid.appendChild(btn);
+  });
+}
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=rand(0,i);[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function checkMCQ(btn,selected,correct){
+  if(state.locked)return; state.locked=true;
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  const ok=String(selected)===String(correct);
+  btn.classList.add(ok?'correct':'wrong');
+  if(!ok)document.querySelectorAll('.option-btn').forEach(b=>{if(String(b.textContent)===String(correct))b.classList.add('correct');});
+  handleResult(ok);
+}
+
+function checkInput(){
+  if(state.locked)return;
+  const inp=document.getElementById('answerInput');
+  const raw=inp.value.trim(); if(!raw)return;
+  state.locked=true;
+  const correct=state.curQ.answer;
+  let ok=false;
+  if(typeof correct==='string'){ok=raw===correct;}
+  else{const num=parseFloat(raw);ok=!isNaN(num)&&Math.abs(num-correct)<0.01;}
+  inp.disabled=true;
+  inp.classList.add(ok?'correct-flash':'shake wrong-flash');
+  handleResult(ok);
+}
+
+function handleResult(ok){
+  state.questionIdx++;
+  const fb=document.getElementById('feedback');
+  if(ok){
+    state.correct++;state.streak++;
+    if(state.streak>state.bestStreak)state.bestStreak=state.streak;
+    const bonus=state.streak>=5?50:state.streak>=3?25:0;
+    const timeBonus=Math.round(state.levelTimeLeft*0.5);
+    const pts=100+bonus+timeBonus;
+    state.score+=pts;
+    fb.textContent=`✓ ត្រូវ! +${pts}${bonus>0?' (ការបន្ត!)':''}`;
+    fb.className='feedback correct-fb';
+    spawnParticles();
+  } else {
+    state.wrong++;state.streak=0;state.lives--;
+    fb.textContent=`✗ ខុស! ចម្លើយ: ${state.curQ.answer}`;
+    fb.className='feedback wrong-fb';
+    if(state.lives<=0){
+      updateHUD();
+      document.getElementById('gameOverTitle').textContent='ជីវិតអស់!';
+      document.getElementById('gameOverMsg').textContent='សាកម្ដងទៀត!';
+      setTimeout(showGameOverPanel,1300); return;
+    }
+  }
+  updateHUD();
+  setTimeout(nextQuestion,1300);
+}
+
+function showGameOverPanel(){
+  clearInterval(state.levelTimerInt);
+  state.running=false;
+  const acc=state.correct+state.wrong>0?Math.round(state.correct/(state.correct+state.wrong)*100):0;
+  document.getElementById('goScore').textContent=state.score;
+  document.getElementById('goAccuracy').textContent=acc+'%';
+  document.getElementById('goStreak').textContent=state.bestStreak;
+  document.getElementById('gameOver').style.display='flex';
+}
+
+function levelComplete(){
+  clearInterval(state.levelTimerInt);
+  state.running=false;
+  completed[state.level]=true;
+  try{localStorage.setItem('mathKhmer100',JSON.stringify(completed));}catch(e){}
+  const acc=Math.round(state.correct/(state.correct+state.wrong)*100);
+  document.getElementById('completeTitle').textContent=state.level===100?'🎆 ជ្រះ ១០០ កម្រិត! 🎆':'កម្រិតជ្រះ!';
+  document.getElementById('completeMsg').textContent=acc>=90?'ល្អឥតខ្ចោះ! អស្ចារ្យ!':acc>=70?'ល្អណាស់!':'ជ្រះ!';
+  document.getElementById('completeStars').textContent=acc>=90?'⭐⭐⭐':acc>=70?'⭐⭐':'⭐';
+  document.getElementById('cScore').textContent=state.score;
+  document.getElementById('cAccuracy').textContent=acc+'%';
+  document.getElementById('cBestStreak').textContent=state.bestStreak;
+  const nb=document.getElementById('nextLevelBtn');
+  if(state.level>=100){nb.textContent='🏆 វីរបុរស!';nb.disabled=true;}
+  else{nb.textContent=`កម្រិត ${state.level+1} →`;nb.disabled=false;}
+  document.getElementById('levelComplete').style.display='flex';
+}
+
+function spawnParticles(){
+  const em=['✨','💥','⚡','🌟','💫','🔥'];
+  for(let i=0;i<6;i++){
+    const p=document.createElement('div');p.className='particle';p.textContent=choice(em);
+    p.style.setProperty('--dx',rand(-150,150)+'px');p.style.setProperty('--dy',rand(-150,150)+'px');
+    p.style.animationDuration=(rand(4,8)/10)+'s';
+    document.body.appendChild(p);setTimeout(()=>p.remove(),900);
+  }
+}
+
+function nextLevel(){document.getElementById('levelComplete').style.display='none';startLevel(state.level+1);}
+function retryLevel(){document.getElementById('gameOver').style.display='none';startLevel(state.level);}
+function exitToMenu(){
+  clearInterval(state.levelTimerInt);state.running=false;
+  document.getElementById('levelComplete').style.display='none';
+  document.getElementById('gameOver').style.display='none';
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('levelSelectScreen').style.display='block';
+  document.querySelectorAll('.lvl-btn').forEach(b=>{if(completed[parseInt(b.textContent)])b.classList.add('completed');});
+}
+
+document.getElementById('submitBtn').addEventListener('click',checkInput);
+document.getElementById('answerInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkInput();});
+buildLevelSelect();
+</script>
+</body>
+</html>

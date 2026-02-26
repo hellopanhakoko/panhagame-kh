@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEONarcade — Play Now</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-cyan: #00f5ff;
+    --neon-pink: #ff006e;
+    --neon-yellow: #ffbe0b;
+    --neon-green: #06d6a0;
+    --bg: #050508;
+    --card: #0d0d1a;
+    --border: #1a1a2e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 3rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px rgba(0,245,255,0.3);
+  }
+
+  .logo span { color: var(--neon-pink); }
+
+  nav .tagline {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-pink) 50%, var(--neon-yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite alternate;
+  }
+
+  @keyframes gradient-shift {
+    from { filter: hue-rotate(0deg); }
+    to { filter: hue-rotate(30deg); }
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+    margin-bottom: 3rem;
+  }
+
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 3rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .game-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .game-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .game-card:nth-child(1) { --accent: var(--neon-cyan); }
+  .game-card:nth-child(2) { --accent: var(--neon-pink); }
+  .game-card:nth-child(3) { --accent: var(--neon-yellow); }
+
+  .game-card::before {
+    background: radial-gradient(ellipse at top left, rgba(var(--accent-rgb), 0.08) 0%, transparent 60%);
+  }
+
+  .game-card:nth-child(4) { --accent: var(--neon-green); }
+
+  .game-card:nth-child(1)::before { background: radial-gradient(ellipse at top left, rgba(0,245,255,0.08) 0%, transparent 60%); }
+  .game-card:nth-child(2)::before { background: radial-gradient(ellipse at top left, rgba(255,0,110,0.08) 0%, transparent 60%); }
+  .game-card:nth-child(3)::before { background: radial-gradient(ellipse at top left, rgba(255,190,11,0.08) 0%, transparent 60%); }
+  .game-card:nth-child(4)::before { background: radial-gradient(ellipse at top left, rgba(57,255,20,0.08) 0%, transparent 60%); }
+
+  .game-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5), 0 0 0 1px var(--accent), 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .game-card:hover::before { opacity: 1; }
+
+  .card-accent-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .game-card:hover .card-accent-line { transform: scaleX(1); }
+
+  .game-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+    filter: drop-shadow(0 0 10px var(--accent));
+  }
+
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    text-shadow: 0 0 10px var(--accent);
+  }
+
+  .game-desc {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .play-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.6rem 1.5rem;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    background: transparent;
+  }
+
+  .game-card:hover .play-btn {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0 3rem 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 15px var(--neon-cyan);
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+  }
+
+  /* Floating particles */
+  .particle {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: float-up linear infinite;
+  }
+
+  @keyframes float-up {
+    from { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    to { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.2), transparent);
+    animation: scan 4s linear infinite;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes scan {
+    from { top: -2px; }
+    to { top: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<nav>
+  <div class="logo">NEON<span>ARCADE</span></div>
+  <div class="tagline">Select Your Game</div>
+</nav>
+
+<div class="hero">
+  <h1>PLAY. SCORE.<br>DOMINATE.</h1>
+  <p>Three games. One arcade. Zero limits.</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Games</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Replays</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0</div>
+    <div class="stat-label">Pay to Win</div>
+  </div>
+</div>
+
+<div class="games-grid">
+  <a href="/game/snake" class="game-card">
+    <div class="card-accent-line"></div>
+    <span class="game-icon">🐍</span>
+    <div class="game-title">SNAKE</div>
+    <div class="game-desc">Classic snake reimagined with neon visuals. Eat, grow, survive. How long can you last?</div>
+    <div class="play-btn">▶ PLAY NOW</div>
+  </a>
+
+  <a href="/game/memory" class="game-card">
+    <div class="card-accent-line"></div>
+    <span class="game-icon">🧠</span>
+    <div class="game-title">MEMORY</div>
+    <div class="game-desc">Match the glowing cards before time runs out. Test your pattern recognition.</div>
+    <div class="play-btn">▶ PLAY NOW</div>
+  </a>
+
+  <a href="/game/tetris" class="game-card">
+    <div class="card-accent-line"></div>
+    <span class="game-icon">🧩</span>
+    <div class="game-title">TETRIS</div>
+    <div class="game-desc">Stack the blocks, clear the lines, beat the clock. The original block-stacker, neon edition.</div>
+    <div class="play-btn">▶ PLAY NOW</div>
+  </a>
+
+  <a href="/game/math" class="game-card">
+    <div class="card-accent-line"></div>
+    <span class="game-icon">🔢</span>
+    <div class="game-title">MATH BLITZ</div>
+    <div class="game-desc">100 levels of pure math madness — from basic addition to legendary multi-step chaos. How far can you go?</div>
+    <div class="play-btn">▶ PLAY NOW</div>
+  </a>
+</div>
+
+<a href="/game/math1" class="game-card">
+    <div class="card-accent-line"></div>
+    <span class="game-icon">🔢</span>
+    <div class="game-title">MATH SMALL</div>
+    <div class="game-desc">100 levels of pure math madness — from basic addition to legendary multi-step chaos. How far can you go?</div>
+    <div class="play-btn">▶ PLAY NOW</div>
+  </a>
+</div>
+
+<script>
+  // Spawn particles
+  const colors = ['#00f5ff', '#ff006e', '#ffbe0b', '#06d6a0'];
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.boxShadow = `0 0 4px ${colors[Math.floor(Math.random() * colors.length)]}`;
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    document.body.appendChild(p);
+  }
+</script>
+</body>
+</html>

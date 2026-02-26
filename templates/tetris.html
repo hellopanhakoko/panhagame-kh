@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TETRIS — NEONarcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --neon-yellow: #ffbe0b; --neon-cyan: #00f5ff; --bg: #050508; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,190,11,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,190,11,0.02) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+  }
+  .back-btn {
+    align-self: flex-start;
+    color: var(--neon-yellow);
+    text-decoration: none;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    border: 1px solid rgba(255,190,11,0.3);
+    padding: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,190,11,0.1); }
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 20px var(--neon-yellow);
+    margin-bottom: 1.5rem;
+  }
+  .game-wrap {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+  }
+  canvas {
+    border: 1px solid rgba(255,190,11,0.3);
+    box-shadow: 0 0 30px rgba(255,190,11,0.1);
+    display: block;
+  }
+  .sidebar { width: 130px; }
+  .side-block {
+    background: #0d0d1a;
+    border: 1px solid #1a1a2e;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .side-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .side-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+  }
+  #nextCanvas { display: block; }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,5,8,0.9);
+    z-index: 100;
+  }
+  .overlay h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 20px var(--neon-yellow);
+    margin-bottom: 1rem;
+  }
+  .overlay p { color: rgba(255,255,255,0.5); margin-bottom: 2rem; font-size: 1.1rem; }
+  .start-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    color: #000;
+    background: var(--neon-yellow);
+    border: none;
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    box-shadow: 0 0 20px var(--neon-yellow);
+    transition: all 0.2s;
+  }
+  .start-btn:hover { transform: scale(1.05); }
+  .controls { font-size: 0.75rem; color: rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.8; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<a href="/" class="back-btn">← ARCADE</a>
+<h1>TETRIS</h1>
+
+<div class="game-wrap">
+  <canvas id="c" width="200" height="400"></canvas>
+  <div class="sidebar">
+    <div class="side-block">
+      <div class="side-label">Score</div>
+      <div class="side-val" id="score">0</div>
+    </div>
+    <div class="side-block">
+      <div class="side-label">Lines</div>
+      <div class="side-val" id="lines">0</div>
+    </div>
+    <div class="side-block">
+      <div class="side-label">Level</div>
+      <div class="side-val" id="level">1</div>
+    </div>
+    <div class="side-block">
+      <div class="side-label">Next</div>
+      <canvas id="nextCanvas" width="90" height="90"></canvas>
+    </div>
+    <div class="controls">
+      ← → Move<br>↑ Rotate<br>↓ Soft drop<br>Space Hard drop
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <h2>TETRIS</h2>
+  <p>Stack the blocks. Clear the lines.</p>
+  <button class="start-btn" id="startBtn">START GAME</button>
+</div>
+
+<script>
+const COLS=10, ROWS=20, CELL=20;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const nctx = document.getElementById('nextCanvas').getContext('2d');
+
+const PIECES = [
+  {shape:[[1,1,1,1]], color:'#00f5ff'},
+  {shape:[[1,1],[1,1]], color:'#ffbe0b'},
+  {shape:[[0,1,1],[1,1,0]], color:'#ff006e'},
+  {shape:[[1,1,0],[0,1,1]], color:'#06d6a0'},
+  {shape:[[1,0,0],[1,1,1]], color:'#ff8c42'},
+  {shape:[[0,0,1],[1,1,1]], color:'#7b2d8b'},
+  {shape:[[0,1,0],[1,1,1]], color:'#4361ee'},
+];
+
+let board, cur, next, score, lines, level, running, raf, lastTime, dropCounter, dropInterval;
+
+function newBoard() { return Array.from({length:ROWS},()=>Array(COLS).fill(0)); }
+
+function randPiece() {
+  const p = PIECES[Math.floor(Math.random()*PIECES.length)];
+  return { shape:p.shape, color:p.color, x:Math.floor(COLS/2)-Math.floor(p.shape[0].length/2), y:0 };
+}
+
+function rotate(shape) {
+  return shape[0].map((_,i)=>shape.map(r=>r[i]).reverse());
+}
+
+function collides(b, piece, ox=0, oy=0) {
+  return piece.shape.some((row,y)=>
+    row.some((val,x)=> val && (
+      piece.x+x+ox<0 || piece.x+x+ox>=COLS ||
+      piece.y+y+oy>=ROWS ||
+      (b[piece.y+y+oy] && b[piece.y+y+oy][piece.x+x+ox])
+    ))
+  );
+}
+
+function place() {
+  cur.shape.forEach((row,y)=>row.forEach((v,x)=>{ if(v) board[cur.y+y][cur.x+x]=cur.color; }));
+  // Clear lines
+  let cleared=0;
+  for(let y=ROWS-1;y>=0;y--) {
+    if(board[y].every(c=>c)) { board.splice(y,1); board.unshift(Array(COLS).fill(0)); cleared++; y++; }
+  }
+  if(cleared) {
+    lines += cleared; score += [0,100,300,500,800][cleared]*level;
+    level = Math.floor(lines/10)+1; dropInterval = Math.max(50, 500-level*40);
+    document.getElementById('score').textContent = score;
+    document.getElementById('lines').textContent = lines;
+    document.getElementById('level').textContent = level;
+  }
+  cur = next;
+  next = randPiece();
+  if(collides(board,cur)) { gameOver(); }
+  drawNext();
+}
+
+function draw(ts) {
+  if(!running) return;
+  const dt = ts - (lastTime||ts);
+  lastTime = ts;
+  dropCounter += dt;
+  if(dropCounter >= dropInterval) { drop(); dropCounter=0; }
+
+  ctx.fillStyle='#050508';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Grid
+  ctx.strokeStyle='rgba(255,190,11,0.05)';
+  ctx.lineWidth=0.5;
+  for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,ROWS*CELL);ctx.stroke();}
+  for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(COLS*CELL,y*CELL);ctx.stroke();}
+
+  // Ghost
+  let ghost = {...cur, y:cur.y};
+  while(!collides(board,ghost,0,1)) ghost.y++;
+  cur.shape.forEach((row,y)=>row.forEach((v,x)=>{
+    if(v){ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect((ghost.x+x)*CELL+1,(ghost.y+y)*CELL+1,CELL-2,CELL-2);}
+  }));
+
+  // Board
+  board.forEach((row,y)=>row.forEach((color,x)=>{
+    if(color){
+      ctx.shadowColor=color; ctx.shadowBlur=6;
+      ctx.fillStyle=color;
+      ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);
+      ctx.fillStyle='rgba(255,255,255,0.15)';
+      ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,4);
+      ctx.shadowBlur=0;
+    }
+  }));
+
+  // Current
+  cur.shape.forEach((row,y)=>row.forEach((v,x)=>{
+    if(v){
+      ctx.shadowColor=cur.color; ctx.shadowBlur=12;
+      ctx.fillStyle=cur.color;
+      ctx.fillRect((cur.x+x)*CELL+1,(cur.y+y)*CELL+1,CELL-2,CELL-2);
+      ctx.fillStyle='rgba(255,255,255,0.2)';
+      ctx.fillRect((cur.x+x)*CELL+1,(cur.y+y)*CELL+1,CELL-2,4);
+      ctx.shadowBlur=0;
+    }
+  }));
+
+  raf = requestAnimationFrame(draw);
+}
+
+function drawNext() {
+  nctx.fillStyle='#050508'; nctx.fillRect(0,0,90,90);
+  const s=CELL, ox=(90-next.shape[0].length*s)/2, oy=(90-next.shape.length*s)/2;
+  next.shape.forEach((row,y)=>row.forEach((v,x)=>{
+    if(v){
+      nctx.shadowColor=next.color; nctx.shadowBlur=8;
+      nctx.fillStyle=next.color;
+      nctx.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2);
+      nctx.shadowBlur=0;
+    }
+  }));
+}
+
+function drop() { if(!collides(board,cur,0,1)){ cur.y++; } else { place(); } }
+function hardDrop() { while(!collides(board,cur,0,1)) cur.y++; place(); }
+
+document.addEventListener('keydown', e => {
+  if(!running) return;
+  if(e.key==='ArrowLeft' && !collides(board,cur,-1)) cur.x--;
+  else if(e.key==='ArrowRight' && !collides(board,cur,1)) cur.x++;
+  else if(e.key==='ArrowDown') { drop(); dropCounter=0; }
+  else if(e.key==='ArrowUp') {
+    const rotated={...cur,shape:rotate(cur.shape)};
+    if(!collides(board,rotated)) cur.shape=rotated.shape;
+  }
+  else if(e.key===' ') { hardDrop(); e.preventDefault(); }
+});
+
+function gameOver() {
+  running=false; cancelAnimationFrame(raf);
+  document.getElementById('overlay').querySelector('h2').textContent='GAME OVER';
+  document.getElementById('overlay').querySelector('p').textContent=`Score: ${score} — Lines: ${lines}`;
+  document.getElementById('startBtn').textContent='PLAY AGAIN';
+  document.getElementById('overlay').style.display='flex';
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  board=newBoard(); score=0; lines=0; level=1;
+  dropInterval=500; dropCounter=0; lastTime=0;
+  document.getElementById('score').textContent=0;
+  document.getElementById('lines').textContent=0;
+  document.getElementById('level').textContent=1;
+  cur=randPiece(); next=randPiece();
+  drawNext();
+  document.getElementById('overlay').style.display='none';
+  running=true;
+  cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(draw);
+});
+</script>
+</body>
+</html>
