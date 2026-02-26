@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-:root {
+:root{
   --neon-cyan:#00f5ff;
   --neon-pink:#ff006e;
   --bg:#050508;
@@ -26,6 +26,28 @@ body{
   padding:1rem;
 }
 
+/* Header */
+.header{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:.5rem;
+}
+.flag{
+  font-size:2rem;
+}
+.lang-btn{
+  font-family:'Orbitron',monospace;
+  font-size:.7rem;
+  letter-spacing:2px;
+  padding:.4rem .8rem;
+  background:rgba(0,245,255,.15);
+  border:1px solid rgba(0,245,255,.5);
+  color:var(--neon-cyan);
+}
+
+/* Title */
 h1{
   font-family:'Orbitron',monospace;
   letter-spacing:6px;
@@ -34,6 +56,7 @@ h1{
   margin-bottom:1rem;
 }
 
+/* HUD */
 .hud{
   display:flex;
   gap:2rem;
@@ -41,8 +64,9 @@ h1{
 }
 .hud-val{
   font-family:'Orbitron',monospace;
-  font-size:1.5rem;
+  font-size:1.4rem;
   color:var(--neon-cyan);
+  text-align:center;
 }
 .hud-label{
   font-size:.7rem;
@@ -50,6 +74,7 @@ h1{
   text-align:center;
 }
 
+/* Canvas */
 .canvas-wrap{position:relative}
 canvas{
   border:1px solid rgba(0,245,255,.3);
@@ -66,10 +91,15 @@ canvas{
   justify-content:center;
   align-items:center;
   z-index:10;
+  text-align:center;
 }
 .overlay h2{
   font-family:'Orbitron',monospace;
   color:var(--neon-pink);
+  margin-bottom:.5rem;
+}
+.overlay p{
+  opacity:.6;
   margin-bottom:1rem;
 }
 .start-btn{
@@ -81,7 +111,7 @@ canvas{
   box-shadow:0 0 20px var(--neon-cyan);
 }
 
-/* Mobile controls */
+/* Mobile Controls */
 .mobile-controls{
   margin-top:1.2rem;
   display:grid;
@@ -102,30 +132,33 @@ canvas{
 }
 
 @media(max-width:600px){
-  canvas{
-    width:90vw;
-    height:90vw;
-  }
+  canvas{width:90vw;height:90vw}
 }
 </style>
 </head>
 
 <body>
 
-<h1>SNAKE</h1>
+<!-- Header -->
+<div class="header">
+  <div class="flag">🇰🇭</div>
+  <button class="lang-btn" id="langBtn">KH</button>
+</div>
+
+<h1 id="title">SNAKE</h1>
 
 <div class="hud">
   <div>
     <div class="hud-val" id="score">0</div>
-    <div class="hud-label">SCORE</div>
+    <div class="hud-label" id="lblScore">SCORE</div>
   </div>
   <div>
     <div class="hud-val" id="level">1</div>
-    <div class="hud-label">LEVEL</div>
+    <div class="hud-label" id="lblLevel">LEVEL</div>
   </div>
   <div>
     <div class="hud-val" id="high">0</div>
-    <div class="hud-label">BEST</div>
+    <div class="hud-label" id="lblBest">BEST</div>
   </div>
 </div>
 
@@ -149,10 +182,10 @@ canvas{
 </div>
 
 <script>
+/* GAME LOGIC (same as before) */
 const COLS=21, ROWS=21, CELL=20;
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
-
 let snake,dir,nextDir,food,score,level,high=0,running=false,interval;
 
 function init(){
@@ -161,122 +194,66 @@ function init(){
   score=0; level=1;
   placeFood(); updateHUD();
 }
-
 function placeFood(){
-  do{
-    food={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};
-  }while(snake.some(s=>s.x===food.x&&s.y===food.y));
+  do{food={x:Math.random()*COLS|0,y:Math.random()*ROWS|0}}
+  while(snake.some(s=>s.x===food.x&&s.y===food.y));
 }
-
 function updateHUD(){
   scoreEl.textContent=score;
   levelEl.textContent=level;
   highEl.textContent=high;
 }
-
 function step(){
   dir=nextDir;
-  const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
-
-  if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS||
-     snake.some(s=>s.x===head.x&&s.y===head.y)){
-    gameOver(); return;
-  }
-
-  snake.unshift(head);
-  if(head.x===food.x&&head.y===food.y){
-    score+=10*level;
-    if(score>high) high=score;
-    if(score%100===0){
-      level++;
-      clearInterval(interval);
-      interval=setInterval(step,Math.max(60,200-level*15));
-    }
+  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(h.x<0||h.x>=COLS||h.y<0||h.y>=ROWS||snake.some(s=>s.x===h.x&&s.y===h.y)){gameOver();return;}
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){
+    score+=10*level; if(score>high)high=score;
+    if(score%100===0){level++; clearInterval(interval); interval=setInterval(step,Math.max(60,200-level*15));}
     placeFood(); updateHUD();
-  }else snake.pop();
-
+  } else snake.pop();
   draw();
 }
-
 function draw(){
-  ctx.fillStyle='#050508';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
+  ctx.fillStyle='#050508'; ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#ff006e';
-  ctx.beginPath();
-  ctx.arc(food.x*CELL+CELL/2,food.y*CELL+CELL/2,CELL/2-3,0,Math.PI*2);
-  ctx.fill();
-
-  snake.forEach((s,i)=>{
-    ctx.fillStyle=`hsl(${180+i*4},100%,50%)`;
-    ctx.fillRect(s.x*CELL+1,s.y*CELL+1,CELL-2,CELL-2);
-  });
+  ctx.beginPath(); ctx.arc(food.x*CELL+CELL/2,food.y*CELL+CELL/2,CELL/2-3,0,Math.PI*2); ctx.fill();
+  snake.forEach((s,i)=>{ctx.fillStyle=`hsl(${180+i*4},100%,50%)`;ctx.fillRect(s.x*CELL+1,s.y*CELL+1,CELL-2,CELL-2);});
 }
-
 function gameOver(){
-  running=false;
-  clearInterval(interval);
+  running=false; clearInterval(interval);
   overlay.style.display='flex';
-  overlayTitle.textContent='GAME OVER';
-  overlaySub.textContent='Score: '+score;
-  startBtn.textContent='PLAY AGAIN';
+  overlayTitle.textContent=lang==='kh'?'ចប់ហ្គេម':'GAME OVER';
+  overlaySub.textContent=(lang==='kh'?'ពិន្ទុ: ':'Score: ')+score;
+  startBtn.textContent=lang==='kh'?'លេងម្ដងទៀត':'PLAY AGAIN';
 }
+startBtn.onclick=()=>{overlay.style.display='none';init();running=true;clearInterval(interval);interval=setInterval(step,200);draw();}
 
-/* Start */
-startBtn.onclick=()=>{
-  overlay.style.display='none';
-  init(); running=true;
-  clearInterval(interval);
-  interval=setInterval(step,200);
-  draw();
-};
-
-/* Keyboard */
-document.addEventListener('keydown',e=>{
-  const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right'};
-  if(map[e.key]) handleDir(map[e.key]);
-});
-
-/* Buttons */
-document.querySelectorAll('.ctrl-btn').forEach(b=>{
-  b.addEventListener('touchstart',e=>{
-    e.preventDefault();
-    handleDir(b.dataset.dir);
-  });
-});
-
-/* Swipe */
-let sx=0,sy=0;
-canvas.addEventListener('touchstart',e=>{
-  sx=e.touches[0].clientX;
-  sy=e.touches[0].clientY;
-});
-canvas.addEventListener('touchend',e=>{
-  let dx=e.changedTouches[0].clientX-sx;
-  let dy=e.changedTouches[0].clientY-sy;
-  if(Math.abs(dx)>Math.abs(dy)){
-    if(dx>20)handleDir('right');
-    if(dx<-20)handleDir('left');
-  }else{
-    if(dy>20)handleDir('down');
-    if(dy<-20)handleDir('up');
-  }
-});
-
+/* Controls */
 function handleDir(d){
   const m={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
   const nd=m[d];
   if(nd && !(nd.x===-dir.x&&nd.y===-dir.y)) nextDir=nd;
 }
+document.addEventListener('keydown',e=>{
+  const k={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right'};
+  if(k[e.key]) handleDir(k[e.key]);
+});
+document.querySelectorAll('.ctrl-btn').forEach(b=>b.addEventListener('touchstart',e=>{e.preventDefault();handleDir(b.dataset.dir);}))
 
-/* Elements */
-const scoreEl=document.getElementById('score');
-const levelEl=document.getElementById('level');
-const highEl=document.getElementById('high');
-const overlay=document.getElementById('overlay');
-const overlayTitle=document.getElementById('overlay-title');
-const overlaySub=document.getElementById('overlay-sub');
-const startBtn=document.getElementById('startBtn');
+/* Language */
+let lang='en';
+langBtn.onclick=()=>{
+  lang=lang==='en'?'kh':'en';
+  langBtn.textContent=lang==='en'?'KH':'EN';
+  lblScore.textContent=lang==='kh'?'ពិន្ទុ':'SCORE';
+  lblLevel.textContent=lang==='kh'?'កម្រិត':'LEVEL';
+  lblBest.textContent=lang==='kh'?'ល្អបំផុត':'BEST';
+  overlaySub.textContent=lang==='kh'?'អូស ឬ ចុច ប៊ូតុង':'Swipe / Buttons / Keyboard';
+  startBtn.textContent=lang==='kh'?'ចាប់ផ្តើម':'START';
+};
+const scoreEl=score, levelEl=level, highEl=high;
 </script>
 
 </body>
