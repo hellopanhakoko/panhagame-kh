@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+import json
 import random
 
 app = Flask(__name__)
@@ -28,9 +29,12 @@ def math_game1():
     return render_template('math1.html')
     
 @app.route('/mine')
-def index():
+def index1():
     return render_template('index1.html')
-
+    
+@app.route('/api/world')
+def get_world():
+    return jsonify({"status": "ok", "message": "Angkor Wat World"})
 
 @app.route('/api/leaderboard', methods=['GET', 'POST'])
 def leaderboard():
