@@ -26,6 +26,14 @@ def math_game():
 @app.route('/game/math1')
 def math_game1():
     return render_template('math1.html')
+    
+@app.route('/mine')
+def index():
+    return render_template('index1.html')
+
+@app.route('/api/world')
+def get_world():
+    return jsonify({"status": "ok", "message": "Angkor Wat World"})
 
 @app.route('/api/leaderboard', methods=['GET', 'POST'])
 def leaderboard():
