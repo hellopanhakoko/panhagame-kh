@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Angkor Craft - Temple of the Gods</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+
+  #ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+  /* Crosshair */
+  #crosshair {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px; height: 20px;
+    opacity: 0.8;
+  }
+  #crosshair::before, #crosshair::after {
+    content: ''; position: absolute; background: white;
+    box-shadow: 0 0 2px rgba(0,0,0,0.8);
+  }
+  #crosshair::before { width: 2px; height: 20px; left: 9px; top: 0; }
+  #crosshair::after { width: 20px; height: 2px; top: 9px; left: 0; }
+
+  /* HUD */
+  #hud {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 10px;
+  }
+
+  /* Hotbar */
+  #hotbar {
+    display: flex; justify-content: center; gap: 4px;
+    margin-bottom: 8px;
+  }
+  .hotbar-slot {
+    width: 48px; height: 48px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: white; text-align: center;
+    position: relative; cursor: pointer;
+    pointer-events: all;
+  }
+  .hotbar-slot.active {
+    border-color: #FFD700;
+    box-shadow: 0 0 8px rgba(255,215,0,0.6);
+  }
+  .hotbar-slot .block-icon {
+    width: 32px; height: 32px; border-radius: 3px;
+  }
+  .hotbar-slot .slot-label {
+    position: absolute; bottom: 1px; right: 3px;
+    font-size: 8px; color: #aaa;
+  }
+
+  /* Health bar */
+  #health-bar {
+    display: flex; justify-content: center; gap: 2px;
+    margin-bottom: 4px;
+  }
+  .heart {
+    font-size: 14px;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+  }
+
+  /* Info panel */
+  #info-panel {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,215,0,0.4);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #FFD700;
+    font-size: 11px;
+    line-height: 1.6;
+    min-width: 160px;
+  }
+  #info-panel .title {
+    font-size: 14px; font-weight: bold;
+    color: #FFD700; margin-bottom: 4px;
+    text-shadow: 0 0 8px rgba(255,215,0,0.6);
+  }
+  #info-panel span { color: #fff; }
+
+  /* NPC dialog */
+  #npc-dialog {
+    position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
+    background: rgba(20,10,5,0.95);
+    border: 2px solid #8B6914;
+    border-radius: 8px;
+    padding: 16px 20px;
+    max-width: 400px; width: 90%;
+    color: #FFD700;
+    font-size: 13px;
+    line-height: 1.6;
+    display: none;
+    pointer-events: all;
+    text-align: center;
+  }
+  #npc-dialog .npc-name {
+    font-size: 16px; font-weight: bold;
+    color: #FFD700; margin-bottom: 8px;
+    text-shadow: 0 0 6px rgba(255,215,0,0.6);
+  }
+  #npc-dialog .npc-text { color: #e8d5a3; margin-bottom: 12px; }
+  #npc-dialog button {
+    background: #8B6914; color: #FFD700;
+    border: 1px solid #FFD700; border-radius: 4px;
+    padding: 6px 16px; cursor: pointer; font-family: inherit;
+    pointer-events: all;
+  }
+  #npc-dialog button:hover { background: #B8860B; }
+
+  /* Start screen */
+  #start-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0a0500, #1a0a00, #0a0500);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; color: #FFD700;
+    pointer-events: all;
+  }
+  #start-screen h1 {
+    font-size: clamp(28px, 6vw, 64px);
+    font-weight: bold;
+    text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,100,0,0.4);
+    margin-bottom: 8px;
+    letter-spacing: 3px;
+  }
+  #start-screen .subtitle {
+    font-size: clamp(12px, 2vw, 18px);
+    color: #c9a84c; margin-bottom: 40px;
+    letter-spacing: 2px;
+  }
+  .temple-art {
+    font-size: clamp(40px, 10vw, 100px);
+    margin-bottom: 20px;
+    animation: glow 2s ease-in-out infinite alternate;
+    line-height: 1;
+  }
+  @keyframes glow {
+    from { filter: drop-shadow(0 0 10px rgba(255,200,0,0.5)); }
+    to { filter: drop-shadow(0 0 25px rgba(255,150,0,0.9)); }
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #8B6914, #B8860B);
+    color: #fff; border: 2px solid #FFD700;
+    padding: 14px 40px; font-size: 18px;
+    border-radius: 6px; cursor: pointer;
+    font-family: inherit; letter-spacing: 2px;
+    transition: all 0.2s;
+    margin: 8px;
+    min-width: 200px;
+  }
+  .start-btn:hover {
+    background: linear-gradient(135deg, #B8860B, #FFD700);
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255,215,0,0.5);
+  }
+  .controls-info {
+    margin-top: 24px; color: #a08040; font-size: 11px;
+    text-align: center; line-height: 2;
+  }
+
+  /* Mobile controls */
+  #mobile-controls {
+    position: fixed; bottom: 90px; left: 0; right: 0;
+    display: none;
+    pointer-events: all;
+    z-index: 20;
+  }
+  #joystick-area {
+    position: absolute; left: 20px; bottom: 0;
+    width: 120px; height: 120px;
+  }
+  #joystick-base {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    position: absolute; top: 10px; left: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #joystick-knob {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,215,0,0.7);
+    border: 2px solid rgba(255,215,0,0.9);
+    position: absolute;
+    transition: none;
+  }
+  #action-buttons {
+    position: absolute; right: 20px; bottom: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .action-row { display: flex; gap: 8px; justify-content: flex-end; }
+  .mobile-btn {
+    width: 55px; height: 55px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.4);
+    color: white; font-size: 11px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none;
+    -webkit-user-select: none;
+    text-align: center;
+    line-height: 1.2;
+  }
+  #btn-jump { background: rgba(100,200,100,0.6); }
+  #btn-place { background: rgba(100,100,255,0.6); }
+  #btn-break { background: rgba(255,100,100,0.6); }
+  #btn-interact { background: rgba(255,200,0,0.6); }
+
+  /* Cam look area for mobile */
+  #cam-area {
+    position: fixed; right: 0; top: 0;
+    width: 50%; height: calc(100% - 180px);
+    z-index: 15;
+    display: none;
+    pointer-events: all;
+  }
+
+  /* Minimap */
+  #minimap {
+    position: absolute; top: 10px; right: 10px;
+    width: 100px; height: 100px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,215,0,0.4);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  #minimap canvas { width: 100%; height: 100%; }
+
+  /* Notifications */
+  #notifications {
+    position: absolute; top: 60px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .notif {
+    background: rgba(0,0,0,0.8);
+    border: 1px solid rgba(255,215,0,0.4);
+    color: #FFD700; padding: 6px 16px;
+    border-radius: 20px; font-size: 12px;
+    animation: fadeNotif 3s forwards;
+  }
+  @keyframes fadeNotif {
+    0% { opacity: 0; transform: translateY(-10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Inventory screen */
+  #inventory-screen {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(10,5,0,0.95);
+    border: 2px solid #8B6914;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 50;
+    display: none;
+    pointer-events: all;
+    min-width: 300px;
+    color: #FFD700;
+  }
+  #inventory-screen h2 { margin-bottom: 12px; font-size: 18px; text-align: center; }
+  .inv-grid {
+    display: grid; grid-template-columns: repeat(5, 50px); gap: 6px;
+    justify-content: center;
+  }
+  .inv-slot {
+    width: 50px; height: 50px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer;
+  }
+  .inv-slot:hover { background: rgba(255,215,0,0.2); }
+  .close-btn {
+    display: block; margin: 12px auto 0;
+    background: #8B6914; color: #FFD700;
+    border: 1px solid #FFD700; border-radius: 4px;
+    padding: 6px 20px; cursor: pointer; font-family: inherit;
+  }
+
+  /* Pause menu */
+  #pause-menu {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(10,5,0,0.96);
+    border: 2px solid #8B6914;
+    border-radius: 10px;
+    padding: 30px 40px;
+    z-index: 60;
+    display: none;
+    pointer-events: all;
+    text-align: center; color: #FFD700;
+  }
+  #pause-menu h2 { font-size: 24px; margin-bottom: 20px; }
+  #pause-menu .menu-btn {
+    display: block; width: 100%;
+    background: rgba(139,105,20,0.5);
+    color: #FFD700; border: 1px solid rgba(255,215,0,0.4);
+    padding: 10px; margin: 8px 0;
+    border-radius: 4px; cursor: pointer;
+    font-family: inherit; font-size: 14px;
+    transition: background 0.2s;
+  }
+  #pause-menu .menu-btn:hover { background: rgba(139,105,20,0.9); }
+
+  @media (max-width: 768px) {
+    #mobile-controls { display: block; }
+    #cam-area { display: block; }
+    #crosshair { display: none; }
+    #info-panel { font-size: 10px; padding: 6px 8px; }
+    .hotbar-slot { width: 40px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="start-screen">
+  <div class="temple-art">🛕</div>
+  <h1>ANGKOR CRAFT</h1>
+  <div class="subtitle">⚔️ Temple of the Ancient Gods ⚔️</div>
+  <button class="start-btn" onclick="startGame()">▶ PLAY NOW</button>
+  <button class="start-btn" onclick="showControls()">📖 CONTROLS</button>
+  <div class="controls-info" id="controls-text">
+    🖥️ DESKTOP: WASD = Move | Mouse = Look | Click = Break/Place<br>
+    Space = Jump | E = Inventory | F = Interact | ESC = Pause<br>
+    📱 MOBILE: Joystick = Move | Swipe right = Look | Buttons = Actions<br>
+    <br>
+    🗿 Explore the ancient temple ruins of Angkor Wat<br>
+    💬 Talk to NPCs | 🧱 Build & Destroy | 🌿 Survive the jungle
+  </div>
+</div>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- UI Overlay -->
+<div id="ui">
+  <div id="crosshair"></div>
+
+  <!-- Info Panel -->
+  <div id="info-panel">
+    <div class="title">🛕 ANGKOR CRAFT</div>
+    Pos: <span id="pos-display">0, 0, 0</span><br>
+    Block: <span id="block-display">Stone</span><br>
+    FPS: <span id="fps-display">60</span><br>
+    Biome: <span id="biome-display">Temple Ruins</span>
+  </div>
+
+  <!-- Minimap -->
+  <div id="minimap">
+    <canvas id="minimap-canvas" width="100" height="100"></canvas>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notifications"></div>
+
+  <!-- NPC Dialog -->
+  <div id="npc-dialog">
+    <div class="npc-name" id="npc-name">Ancient Monk</div>
+    <div class="npc-text" id="npc-text">Greetings, traveler...</div>
+    <button onclick="closeDialog()">Continue</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="health-bar">
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+      <span class="heart">❤️</span><span class="heart">❤️</span>
+    </div>
+    <div id="hotbar"></div>
+  </div>
+</div>
+
+<!-- Mobile Controls -->
+<div id="mobile-controls">
+  <div id="joystick-area">
+    <div id="joystick-base">
+      <div id="joystick-knob"></div>
+    </div>
+  </div>
+  <div id="action-buttons">
+    <div class="action-row">
+      <div class="mobile-btn" id="btn-interact" ontouchstart="interactNPC()">💬</div>
+      <div class="mobile-btn" id="btn-jump" ontouchstart="playerJump()">⬆</div>
+    </div>
+    <div class="action-row">
+      <div class="mobile-btn" id="btn-break" id="btn-break">⛏️</div>
+      <div class="mobile-btn" id="btn-place" id="btn-place">🧱</div>
+    </div>
+  </div>
+</div>
+
+<!-- Camera look area for mobile -->
+<div id="cam-area"></div>
+
+<!-- Inventory Screen -->
+<div id="inventory-screen">
+  <h2>🎒 Inventory</h2>
+  <div class="inv-grid" id="inv-grid"></div>
+  <button class="close-btn" onclick="closeInventory()">Close</button>
+</div>
+
+<!-- Pause Menu -->
+<div id="pause-menu">
+  <h2>⏸ PAUSED</h2>
+  <button class="menu-btn" onclick="resumeGame()">▶ Resume</button>
+  <button class="menu-btn" onclick="toggleInventory()">🎒 Inventory</button>
+  <button class="menu-btn" onclick="location.reload()">🏠 Main Menu</button>
+</div>
+
+<script>
+// ============================================================
+// ANGKOR CRAFT - Full 3D Voxel Game Engine
+// ============================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const TILE = 40;
+let gameRunning = false;
+let paused = false;
+let inventoryOpen = false;
+
+// ---- World Sizes ----
+const WORLD_W = 80, WORLD_H = 20, WORLD_D = 80;
+
+// ---- Block Types ----
+const BLOCKS = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+  SANDSTONE: 4,
+  TEMPLE_STONE: 5,
+  TEMPLE_BRICK: 6,
+  WOOD: 7,
+  LEAVES: 8,
+  WATER: 9,
+  GOLD: 10,
+  MOSSY: 11,
+  LAVA: 12,
+  CLOUD: 13,
+};
+
+const BLOCK_INFO = {
+  [BLOCKS.STONE]:        { name: 'Stone',        color: '#888', top: '#999', side: '#777', emoji: '🪨' },
+  [BLOCKS.GRASS]:        { name: 'Grass',         color: '#4a7c3f', top: '#5a9e4e', side: '#6b4226', emoji: '🟩' },
+  [BLOCKS.DIRT]:         { name: 'Dirt',          color: '#6b4226', top: '#7a5230', side: '#5c3820', emoji: '🟫' },
+  [BLOCKS.SANDSTONE]:    { name: 'Sandstone',     color: '#c8b560', top: '#d4c070', side: '#b0a050', emoji: '🟡' },
+  [BLOCKS.TEMPLE_STONE]: { name: 'Temple Stone',  color: '#b0a080', top: '#c0b090', side: '#a09070', emoji: '🧱' },
+  [BLOCKS.TEMPLE_BRICK]: { name: 'Temple Brick',  color: '#c4935a', top: '#d4a36a', side: '#b4834a', emoji: '🏛️' },
+  [BLOCKS.WOOD]:         { name: 'Wood',          color: '#8B6914', top: '#7a5c10', side: '#9B7924', emoji: '🪵' },
+  [BLOCKS.LEAVES]:       { name: 'Leaves',        color: '#2d6e2d', top: '#3d8e3d', side: '#1d5e1d', emoji: '🌿' },
+  [BLOCKS.WATER]:        { name: 'Water',         color: '#1a6b9a', top: '#2a8bbf', side: '#0a5b8a', emoji: '💧' },
+  [BLOCKS.GOLD]:         { name: 'Gold Ore',      color: '#B8860B', top: '#D4A017', side: '#9A7009', emoji: '🌟' },
+  [BLOCKS.MOSSY]:        { name: 'Mossy Stone',   color: '#4a7050', top: '#5a8060', side: '#3a6040', emoji: '🟢' },
+  [BLOCKS.LAVA]:         { name: 'Lava',          color: '#FF4500', top: '#FF6010', side: '#DD3000', emoji: '🔥' },
+  [BLOCKS.CLOUD]:        { name: 'Cloud',         color: '#f0f0ff', top: '#ffffff', side: '#e0e0f0', emoji: '☁️' },
+};
+
+// ---- Player ----
+const player = {
+  x: 40, y: 0, z: 40,
+  vx: 0, vy: 0, vz: 0,
+  yaw: 0, pitch: 0,
+  onGround: false,
+  health: 10, maxHealth: 10,
+  inventory: {},
+  selectedSlot: 0,
+  hotbar: [BLOCKS.TEMPLE_BRICK, BLOCKS.TEMPLE_STONE, BLOCKS.SANDSTONE, BLOCKS.WOOD, BLOCKS.LEAVES, BLOCKS.STONE, BLOCKS.DIRT, BLOCKS.GOLD, BLOCKS.MOSSY],
+  height: 1.8, speed: 5,
+};
+
+// ---- World Data ----
+let world = new Uint8Array(WORLD_W * WORLD_H * WORLD_D);
+
+function getBlock(x, y, z) {
+  if (x < 0 || x >= WORLD_W || y < 0 || y >= WORLD_H || z < 0 || z >= WORLD_D) return BLOCKS.STONE;
+  return world[x + y * WORLD_W + z * WORLD_W * WORLD_H];
+}
+function setBlock(x, y, z, type) {
+  if (x < 0 || x >= WORLD_W || y < 0 || y >= WORLD_H || z < 0 || z >= WORLD_D) return;
+  world[x + y * WORLD_W + z * WORLD_W * WORLD_H] = type;
+}
+
+// ---- NPCs ----
+const NPC_DIALOGS = [
+  { name: "Elder Khun", lines: ["Welcome to the sacred temple of Angkor Wat, traveler.", "The ancient Khmer built this marvel over 1,000 years ago.", "Beware the jungle depths — spirits roam at dusk.", "Seek the gold ore beneath the temple foundations!"] },
+  { name: "Monk Sophea", lines: ["The stone towers reach toward the heavens, connecting earth to sky.", "If you find lotus flowers, bring them as offerings.", "Break nothing sacred — the gods are watching!", "The water in the moat reflects the cosmos itself."] },
+  { name: "Merchant Dara", lines: ["I trade jungle goods for temple stones!", "Find gold deep underground — very valuable!", "The Bayon temple lies to the north, many NPCs there.", "Build your shelter before nightfall, traveler."] },
+  { name: "Guard Sophal", lines: ["Halt! Only authorized builders may enter the inner sanctum.", "...Very well, you may pass. Don't touch the gold altars.", "We guard this temple day and night.", "The carvings on the walls tell stories of gods and demons."] },
+  { name: "Devata Spirit", lines: ["I am an apsara, a celestial dancer of the gods.", "These walls were carved with 1,000 of my sisters.", "The jungle has grown over much of the old kingdom.", "Help us restore the temple to its former glory!"] },
+];
+
+let npcs = [];
+
+function createNPCs() {
+  // Place NPCs around the world
+  const positions = [
+    { x: 40, z: 42 }, { x: 36, z: 40 }, { x: 44, z: 40 },
+    { x: 40, z: 36 }, { x: 38, z: 38 }, { x: 42, z: 46 },
+    { x: 30, z: 50 }, { x: 50, z: 30 },
+  ];
+  positions.forEach((pos, i) => {
+    const groundY = getGroundY(pos.x, pos.z);
+    npcs.push({
+      x: pos.x + 0.5, y: groundY + 1, z: pos.z + 0.5,
+      dialog: NPC_DIALOGS[i % NPC_DIALOGS.length],
+      dialogIndex: 0,
+      type: i % 5,
+    });
+  });
+}
+
+// ---- World Generation ----
+function generateWorld() {
+  // Base terrain with Perlin-like noise
+  const noiseScale = 0.08;
+
+  for (let x = 0; x < WORLD_W; x++) {
+    for (let z = 0; z < WORLD_D; z++) {
+      const nx = x * noiseScale, nz = z * noiseScale;
+      const h = Math.floor(4 + 3 * (Math.sin(nx * 2.3) * Math.cos(nz * 1.7) +
+                                     Math.sin(nx * 4.1 + 1) * Math.cos(nz * 3.3 + 2) * 0.5));
+
+      for (let y = 0; y < WORLD_H; y++) {
+        if (y === 0) setBlock(x, y, z, BLOCKS.STONE);
+        else if (y < h - 2) setBlock(x, y, z, BLOCKS.DIRT);
+        else if (y < h - 1) setBlock(x, y, z, BLOCKS.DIRT);
+        else if (y === h - 1) setBlock(x, y, z, BLOCKS.GRASS);
+        else if (y < 4 && y > h) setBlock(x, y, z, BLOCKS.WATER);
+      }
+
+      // Gold ore underground
+      if (Math.random() < 0.03) setBlock(x, 1, z, BLOCKS.GOLD);
+      if (Math.random() < 0.02) setBlock(x, 2, z, BLOCKS.GOLD);
+    }
+  }
+
+  // Build Angkor Wat style temple in center
+  buildTemple(35, 45, 35, 45);
+
+  // Jungle trees
+  for (let i = 0; i < 60; i++) {
+    const tx = 5 + Math.floor(Math.random() * (WORLD_W - 10));
+    const tz = 5 + Math.floor(Math.random() * (WORLD_D - 10));
+    // Skip temple area
+    if (tx >= 32 && tx <= 50 && tz >= 32 && tz <= 50) continue;
+    const gy = getGroundY(tx, tz);
+    if (gy > 0 && getBlock(tx, gy, tz) === BLOCKS.GRASS) {
+      placeTree(tx, gy + 1, tz);
+    }
+  }
+
+  // Moat
+  for (let x = 30; x < 52; x++) {
+    for (let z = 30; z < 52; z++) {
+      if (x < 33 || x > 48 || z < 33 || z > 48) {
+        const gy = getGroundY(x, z);
+        setBlock(x, gy, z, BLOCKS.WATER);
+      }
+    }
+  }
+}
+
+function getGroundY(x, z) {
+  for (let y = WORLD_H - 1; y >= 0; y--) {
+    if (getBlock(x, y, z) !== BLOCKS.AIR) return y;
+  }
+  return 0;
+}
+
+function buildTemple(x1, x2, z1, z2) {
+  // Foundation / base platform
+  for (let x = x1 - 2; x <= x2 + 2; x++) {
+    for (let z = z1 - 2; z <= z2 + 2; z++) {
+      for (let y = 3; y <= 5; y++) {
+        setBlock(x, y, z, BLOCKS.SANDSTONE);
+      }
+    }
+  }
+
+  // Temple walls level 1
+  for (let x = x1; x <= x2; x++) {
+    for (let z = z1; z <= z2; z++) {
+      const isEdge = x === x1 || x === x2 || z === z1 || z === z2;
+      if (isEdge) {
+        for (let y = 5; y <= 8; y++) {
+          setBlock(x, y, z, BLOCKS.TEMPLE_STONE);
+        }
+        if (y => 6) {
+          const carved = (x === x1 && (z - z1) % 4 === 2) ||
+                         (x === x2 && (z - z1) % 4 === 2) ||
+                         (z === z1 && (x - x1) % 4 === 2) ||
+                         (z === z2 && (x - x1) % 4 === 2);
+          if (!carved) setBlock(x, 9, z, BLOCKS.TEMPLE_BRICK);
+        }
+      }
+    }
+  }
+
+  // Level 2 - inner sanctum
+  const cx = Math.floor((x1 + x2) / 2);
+  const cz = Math.floor((z1 + z2) / 2);
+  for (let x = cx - 4; x <= cx + 4; x++) {
+    for (let z = cz - 4; z <= cz + 4; z++) {
+      const isEdge = x === cx - 4 || x === cx + 4 || z === cz - 4 || z === cz + 4;
+      if (isEdge) {
+        for (let y = 9; y <= 12; y++) setBlock(x, y, z, BLOCKS.TEMPLE_BRICK);
+      } else {
+        setBlock(x, 9, z, BLOCKS.SANDSTONE);
+      }
+    }
+  }
+
+  // Center tower / prasat
+  for (let y = 12; y <= 17; y++) {
+    const r = Math.max(1, Math.floor((17 - y) / 1.5));
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dz = -r; dz <= r; dz++) {
+        if (Math.abs(dx) + Math.abs(dz) <= r + 1) {
+          setBlock(cx + dx, y, cz + dz, BLOCKS.TEMPLE_STONE);
+        }
+      }
+    }
+  }
+
+  // Gold altar at top
+  setBlock(cx, 18, cz, BLOCKS.GOLD);
+
+  // Stairways
+  for (let i = 0; i < 4; i++) {
+    setBlock(cx, 9 + i, z1 - 3 - i, BLOCKS.SANDSTONE);
+    setBlock(cx, 9 + i, z2 + 3 + i, BLOCKS.SANDSTONE);
+    setBlock(x1 - 3 - i, 9 + i, cz, BLOCKS.SANDSTONE);
+    setBlock(x2 + 3 + i, 9 + i, cz, BLOCKS.SANDSTONE);
+  }
+
+  // Add moss to walls for ancient feel
+  for (let x = x1; x <= x2; x++) {
+    for (let z = z1; z <= z2; z++) {
+      if (Math.random() < 0.15) {
+        setBlock(x, 9, z, BLOCKS.MOSSY);
+        if (Math.random() < 0.3) setBlock(x, 8, z, BLOCKS.MOSSY);
+      }
+    }
+  }
+}
+
+function placeTree(x, y, z) {
+  const h = 4 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < h; i++) setBlock(x, y + i, z, BLOCKS.WOOD);
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dz = -2; dz <= 2; dz++) {
+      for (let dy = h - 1; dy <= h + 1; dy++) {
+        if (dx === 0 && dz === 0 && dy < h) continue;
+        if (Math.abs(dx) + Math.abs(dz) + Math.abs(dy - h) <= 3) {
+          if (getBlock(x + dx, y + dy, z + dz) === BLOCKS.AIR) {
+            setBlock(x + dx, y + dy, z + dz, BLOCKS.LEAVES);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---- 3D Rendering Engine (Raycasting + Voxel) ----
+let screenW = 0, screenH = 0;
+let depthBuffer = [];
+let frameCount = 0, lastFpsTime = 0, fps = 60;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  screenW = canvas.width;
+  screenH = canvas.height;
+  depthBuffer = new Float64Array(screenW);
+}
+
+// Sky gradient colors based on time
+let gameTime = 0.5; // 0=midnight, 0.5=noon, 1=midnight
+
+function getSkyColor() {
+  const t = gameTime;
+  if (t < 0.2 || t > 0.8) {
+    return { r: 5, g: 5, b: 20 };
+  } else if (t < 0.3) {
+    const f = (t - 0.2) / 0.1;
+    return { r: Math.floor(5 + f * 255), g: Math.floor(5 + f * 100), b: Math.floor(20 + f * 50) };
+  } else if (t > 0.7) {
+    const f = (0.8 - t) / 0.1;
+    return { r: Math.floor(5 + f * 255), g: Math.floor(5 + f * 100), b: Math.floor(20 + f * 50) };
+  }
+  return { r: 80, g: 160, b: 240 };
+}
+
+function renderWorld() {
+  const sky = getSkyColor();
+
+  // Draw sky
+  const grad = ctx.createLinearGradient(0, 0, 0, screenH * 0.6);
+  grad.addColorStop(0, `rgb(${Math.max(0,sky.r-40)},${Math.max(0,sky.g-40)},${Math.max(0,sky.b-20)})`);
+  grad.addColorStop(1, `rgb(${sky.r},${sky.g},${sky.b})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, screenW, screenH);
+
+  // Draw floor (simple ground plane)
+  const floorGrad = ctx.createLinearGradient(0, screenH * 0.5, 0, screenH);
+  floorGrad.addColorStop(0, '#2a4a20');
+  floorGrad.addColorStop(1, '#1a3010');
+  ctx.fillStyle = floorGrad;
+  ctx.fillRect(0, screenH * 0.5, screenW, screenH * 0.5);
+
+  // Raycast for blocks
+  const fov = Math.PI / 3; // 60 degrees
+  const halfW = screenW / 2;
+
+  // Cast rays across screen width
+  const rayStep = Math.max(1, Math.floor(screenW / 320));
+  for (let col = 0; col < screenW; col += rayStep) {
+    const rayAngle = player.yaw - fov / 2 + (col / screenW) * fov;
+    const rayDirX = Math.cos(rayAngle);
+    const rayDirZ = Math.sin(rayAngle);
+    const pitchOffset = Math.sin(player.pitch) * screenH * 0.5;
+
+    // DDA ray marching
+    let mapX = Math.floor(player.x);
+    let mapZ = Math.floor(player.z);
+    const deltaDistX = Math.abs(1 / (rayDirX || 0.0001));
+    const deltaDistZ = Math.abs(1 / (rayDirZ || 0.0001));
+    let stepX, stepZ, sideDistX, sideDistZ;
+
+    if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+    else { stepX = 1; sideDistX = (mapX + 1 - player.x) * deltaDistX; }
+    if (rayDirZ < 0) { stepZ = -1; sideDistZ = (player.z - mapZ) * deltaDistZ; }
+    else { stepZ = 1; sideDistZ = (mapZ + 1 - player.z) * deltaDistZ; }
+
+    let hit = false, side = 0, dist = 0;
+    let hitBlock = BLOCKS.AIR;
+    const maxDist = 30;
+
+    while (!hit && dist < maxDist) {
+      if (sideDistX < sideDistZ) { sideDistX += deltaDistX; mapX += stepX; side = 0; dist = sideDistX - deltaDistX; }
+      else { sideDistZ += deltaDistZ; mapZ += stepZ; side = 1; dist = sideDistZ - deltaDistZ; }
+      if (dist > maxDist) break;
+
+      // Find the column of blocks at this X,Z and check which hits player's view height
+      const eyeY = player.y + player.height;
+      for (let y = WORLD_H - 1; y >= 0; y--) {
+        const b = getBlock(mapX, y, mapZ);
+        if (b !== BLOCKS.AIR) {
+          // Calculate screen projection for this block face
+          const blockTop = y + 1;
+          const blockBot = y;
+          const distToColumn = dist;
+
+          if (distToColumn < 0.1) break;
+
+          const screenTop = Math.floor(screenH / 2 - (blockTop - eyeY) / distToColumn * screenH + pitchOffset);
+          const screenBot = Math.floor(screenH / 2 - (blockBot - eyeY) / distToColumn * screenH + pitchOffset);
+
+          if (screenTop < screenH && screenBot > 0) {
+            const info = BLOCK_INFO[b] || BLOCK_INFO[BLOCKS.STONE];
+            let baseColor = side === 0 ? info.side : info.color;
+
+            // Fog / distance shading
+            const fogFactor = Math.min(1, distToColumn / 20);
+            const darkFactor = 1 - fogFactor * 0.6;
+            if (side === 0) baseColor = shadeColor(baseColor, darkFactor * 0.8);
+
+            ctx.fillStyle = baseColor;
+            const drawTop = Math.max(0, screenTop);
+            const drawBot = Math.min(screenH, screenBot);
+            ctx.fillRect(col, drawTop, rayStep, drawBot - drawTop);
+
+            if (!hit) { hit = true; hitBlock = b; dist = distToColumn; }
+          }
+        }
+      }
+    }
+    depthBuffer[col] = dist;
+  }
+
+  // Render NPCs as sprites
+  renderNPCSprites();
+
+  // Render sun/moon
+  renderCelestials();
+}
+
+function shadeColor(hex, factor) {
+  // hex can be like '#888' or '#8B6914'
+  let r, g, b;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+  r = Math.floor(r * factor); g = Math.floor(g * factor); b = Math.floor(b * factor);
+  return `rgb(${Math.max(0,Math.min(255,r))},${Math.max(0,Math.min(255,g))},${Math.max(0,Math.min(255,b))})`;
+}
+
+function renderNPCSprites() {
+  for (const npc of npcs) {
+    // Vector from player to NPC
+    const dx = npc.x - player.x;
+    const dz = npc.z - player.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    if (dist < 0.5 || dist > 25) continue;
+
+    // Transform to camera space
+    const angle = Math.atan2(dz, dx) - player.yaw;
+    let screenAngle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    if (screenAngle > Math.PI) screenAngle -= Math.PI * 2;
+
+    const fov = Math.PI / 3;
+    if (Math.abs(screenAngle) > fov * 0.6) continue;
+
+    const screenX = Math.floor(screenW / 2 + (screenAngle / (fov / 2)) * screenW / 2);
+    const eyeY = player.y + player.height;
+    const pitchOffset = Math.sin(player.pitch) * screenH * 0.5;
+    const npcScreenY = Math.floor(screenH / 2 - (npc.y - eyeY) / dist * screenH + pitchOffset);
+    const size = Math.floor(screenH / dist * 1.5);
+
+    if (screenX < -size || screenX > screenW + size) continue;
+    if (depthBuffer[Math.max(0, Math.min(screenW - 1, screenX))] < dist - 0.5) continue;
+
+    // Draw NPC
+    const emojis = ['🧘', '👳', '🏺', '⚔️', '💃'];
+    ctx.font = `${Math.floor(size * 0.8)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(emojis[npc.type % emojis.length], screenX, npcScreenY);
+
+    // Name tag if close
+    if (dist < 5) {
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(npc.dialog.name, screenX, npcScreenY - size * 0.5);
+    }
+  }
+}
+
+function renderCelestials() {
+  const t = gameTime;
+  const angle = t * Math.PI * 2 - Math.PI / 2;
+  // Sun position in sky
+  const sunScreenX = screenW / 2 + Math.cos(angle) * screenW * 0.4;
+  const sunScreenY = screenH * 0.4 - Math.sin(angle) * screenH * 0.35;
+
+  if (Math.sin(angle) > -0.1) { // Sun visible
+    ctx.font = '30px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('☀️', sunScreenX, sunScreenY);
+  } else { // Moon
+    ctx.font = '25px serif';
+    ctx.fillText('🌙', sunScreenX, sunScreenY);
+  }
+}
+
+// ---- Update Minimap ----
+function updateMinimap() {
+  const mc = document.getElementById('minimap-canvas');
+  const mctx = mc.getContext('2d');
+  const scale = 100 / Math.max(WORLD_W, WORLD_D);
+
+  mctx.fillStyle = '#111';
+  mctx.fillRect(0, 0, 100, 100);
+
+  for (let x = 0; x < WORLD_W; x++) {
+    for (let z = 0; z < WORLD_D; z++) {
+      const topBlock = getGroundY(x, z);
+      const b = getBlock(x, topBlock, z);
+      const info = BLOCK_INFO[b];
+      if (info) {
+        mctx.fillStyle = info.color;
+        mctx.fillRect(Math.floor(x * scale), Math.floor(z * scale), Math.ceil(scale), Math.ceil(scale));
+      }
+    }
+  }
+
+  // Player dot
+  mctx.fillStyle = '#fff';
+  mctx.beginPath();
+  mctx.arc(player.x * scale, player.z * scale, 2, 0, Math.PI * 2);
+  mctx.fill();
+
+  // NPC dots
+  mctx.fillStyle = '#FFD700';
+  for (const npc of npcs) {
+    mctx.fillRect(npc.x * scale - 1, npc.z * scale - 1, 3, 3);
+  }
+}
+
+// ---- Input ----
+const keys = {};
+let mouseX = 0, mouseY = 0;
+let pointerLocked = false;
+
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Escape') { if (gameRunning) togglePause(); }
+  if (e.code === 'KeyE') { if (gameRunning && !paused) toggleInventory(); }
+  if (e.code === 'KeyF') { if (gameRunning && !paused) interactNPC(); }
+  // Hotbar 1-9
+  if (e.code.startsWith('Digit')) {
+    const n = parseInt(e.code[5]) - 1;
+    if (n >= 0 && n < player.hotbar.length) selectSlot(n);
+  }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('click', e => {
+  if (!gameRunning || paused) return;
+  if (!pointerLocked) {
+    canvas.requestPointerLock();
+    return;
+  }
+  if (e.button === 0) breakBlock();
+  if (e.button === 2) placeBlock();
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (gameRunning && !paused && pointerLocked) placeBlock();
+});
+
+document.addEventListener('mousemove', e => {
+  if (!pointerLocked || paused) return;
+  player.yaw += e.movementX * 0.002;
+  player.pitch -= e.movementY * 0.002;
+  player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch));
+});
+
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+});
+
+document.addEventListener('wheel', e => {
+  const dir = e.deltaY > 0 ? 1 : -1;
+  player.selectedSlot = (player.selectedSlot + dir + player.hotbar.length) % player.hotbar.length;
+  updateHotbar();
+});
+
+// ---- Block Interaction ----
+function getRaycastBlock(maxDist = 5) {
+  const rayDirX = Math.cos(player.pitch) * Math.cos(player.yaw);
+  const rayDirY = Math.sin(player.pitch);
+  const rayDirZ = Math.cos(player.pitch) * Math.sin(player.yaw);
+
+  let x = player.x, y = player.y + player.height * 0.8, z = player.z;
+  for (let t = 0; t < maxDist; t += 0.1) {
+    const bx = Math.floor(x), by = Math.floor(y), bz = Math.floor(z);
+    if (getBlock(bx, by, bz) !== BLOCKS.AIR) {
+      return { bx, by, bz, x: x - rayDirX * 0.1, y: y - rayDirY * 0.1, z: z - rayDirZ * 0.1 };
+    }
+    x += rayDirX * 0.1; y += rayDirY * 0.1; z += rayDirZ * 0.1;
+  }
+  return null;
+}
+
+function breakBlock() {
+  const hit = getRaycastBlock();
+  if (!hit) return;
+  const b = getBlock(hit.bx, hit.by, hit.bz);
+  setBlock(hit.bx, hit.by, hit.bz, BLOCKS.AIR);
+  addToInventory(b);
+  showNotif(`Collected ${BLOCK_INFO[b]?.name || 'Block'} ${BLOCK_INFO[b]?.emoji || ''}`);
+}
+
+function placeBlock() {
+  const hit = getRaycastBlock();
+  if (!hit) return;
+  const px = Math.floor(hit.x), py = Math.floor(hit.y), pz = Math.floor(hit.z);
+  const blockType = player.hotbar[player.selectedSlot];
+  setBlock(px, py, pz, blockType);
+  showNotif(`Placed ${BLOCK_INFO[blockType]?.name || 'Block'}`);
+}
+
+function addToInventory(blockType) {
+  player.inventory[blockType] = (player.inventory[blockType] || 0) + 1;
+}
+
+// ---- NPC Interaction ----
+let activeNPC = null;
+let dialogLineIndex = 0;
+
+function interactNPC() {
+  // Find nearest NPC within range
+  let nearest = null, nearestDist = 4;
+  for (const npc of npcs) {
+    const dx = npc.x - player.x, dz = npc.z - player.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < nearestDist) { nearest = npc; nearestDist = dist; }
+  }
+  if (!nearest) { showNotif('No NPC nearby (press F near an NPC)'); return; }
+
+  activeNPC = nearest;
+  dialogLineIndex = nearest.dialogIndex;
+  document.getElementById('npc-name').textContent = nearest.dialog.name;
+  document.getElementById('npc-text').textContent = nearest.dialog.lines[dialogLineIndex];
+  document.getElementById('npc-dialog').style.display = 'block';
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+
+function closeDialog() {
+  if (!activeNPC) return;
+  dialogLineIndex = (dialogLineIndex + 1) % activeNPC.dialog.lines.length;
+  activeNPC.dialogIndex = dialogLineIndex;
+  if (dialogLineIndex === 0) {
+    document.getElementById('npc-dialog').style.display = 'none';
+    activeNPC = null;
+    canvas.requestPointerLock();
+  } else {
+    document.getElementById('npc-text').textContent = activeNPC.dialog.lines[dialogLineIndex];
+  }
+}
+
+// ---- Physics ----
+const gravity = 18;
+function updatePhysics(dt) {
+  // Apply gravity
+  player.vy -= gravity * dt;
+
+  // Movement
+  const moveSpeed = player.speed;
+  let moveX = 0, moveZ = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) { moveX += Math.cos(player.yaw) * moveSpeed * dt; moveZ += Math.sin(player.yaw) * moveSpeed * dt; }
+  if (keys['KeyS'] || keys['ArrowDown']) { moveX -= Math.cos(player.yaw) * moveSpeed * dt; moveZ -= Math.sin(player.yaw) * moveSpeed * dt; }
+  if (keys['KeyA'] || keys['ArrowLeft']) { moveX += Math.cos(player.yaw - Math.PI/2) * moveSpeed * dt; moveZ += Math.sin(player.yaw - Math.PI/2) * moveSpeed * dt; }
+  if (keys['KeyD'] || keys['ArrowRight']) { moveX += Math.cos(player.yaw + Math.PI/2) * moveSpeed * dt; moveZ += Math.sin(player.yaw + Math.PI/2) * moveSpeed * dt; }
+
+  // Apply joystick input
+  if (joystick.active) {
+    moveX += Math.cos(player.yaw) * joystick.y * moveSpeed * dt;
+    moveZ += Math.sin(player.yaw) * joystick.y * moveSpeed * dt;
+    moveX += Math.cos(player.yaw + Math.PI/2) * joystick.x * moveSpeed * dt;
+    moveZ += Math.sin(player.yaw + Math.PI/2) * joystick.x * moveSpeed * dt;
+  }
+
+  // Jump
+  if ((keys['Space'] || jumpPressed) && player.onGround) {
+    player.vy = 7;
+    player.onGround = false;
+    jumpPressed = false;
+  }
+
+  // Collision detection
+  const newX = player.x + moveX;
+  const newZ = player.z + moveZ;
+  const newY = player.y + player.vy * dt;
+
+  // X collision
+  if (!checkCollision(newX, player.y, player.z)) player.x = newX;
+  // Z collision
+  if (!checkCollision(player.x, player.y, newZ)) player.z = newZ;
+  // Y collision
+  if (!checkCollision(player.x, newY, player.z)) {
+    player.y = newY;
+    player.onGround = false;
+  } else {
+    if (player.vy < 0) {
+      player.onGround = true;
+      player.y = Math.ceil(newY) + 0.01;
+    }
+    player.vy = 0;
+  }
+
+  // Clamp to world
+  player.x = Math.max(0.5, Math.min(WORLD_W - 0.5, player.x));
+  player.z = Math.max(0.5, Math.min(WORLD_D - 0.5, player.z));
+  if (player.y < 0) { player.y = 0; player.vy = 0; player.onGround = true; }
+
+  // Fall death
+  if (player.y < -10) {
+    player.x = 40; player.y = 15; player.z = 40;
+    player.vy = 0;
+    showNotif('💀 You fell! Respawned at temple.');
+  }
+}
+
+function checkCollision(x, y, z) {
+  const px = Math.floor(x), py = Math.floor(y), pz = Math.floor(z);
+  const topPy = Math.floor(y + player.height - 0.1);
+  for (let ty = py; ty <= topPy; ty++) {
+    if (getBlock(px, ty, pz) !== BLOCKS.AIR) return true;
+  }
+  return false;
+}
+
+// ---- Mobile Controls ----
+const joystick = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+let jumpPressed = false;
+let camTouchStartX = 0, camTouchStartY = 0, camTouchActive = false;
+
+const joystickBase = document.getElementById('joystick-base');
+const joystickKnob = document.getElementById('joystick-knob');
+
+joystickBase.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = joystickBase.getBoundingClientRect();
+  joystick.startX = rect.left + rect.width / 2;
+  joystick.startY = rect.top + rect.height / 2;
+  joystick.active = true;
+}, { passive: false });
+
+joystickBase.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const dx = t.clientX - joystick.startX;
+  const dy = t.clientY - joystick.startY;
+  const dist = Math.min(35, Math.sqrt(dx * dx + dy * dy));
+  const angle = Math.atan2(dy, dx);
+  joystick.x = Math.cos(angle) * dist / 35;
+  joystick.y = -Math.sin(angle) * dist / 35; // Invert Y so up = forward
+  joystickKnob.style.left = (50 + Math.cos(angle) * dist - 20) + 'px';
+  joystickKnob.style.top = (50 + Math.sin(angle) * dist - 20) + 'px';
+}, { passive: false });
+
+joystickBase.addEventListener('touchend', e => {
+  e.preventDefault();
+  joystick.active = false; joystick.x = 0; joystick.y = 0;
+  joystickKnob.style.left = '30px'; joystickKnob.style.top = '30px';
+}, { passive: false });
+
+// Camera swipe
+const camArea = document.getElementById('cam-area');
+camArea.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  camTouchStartX = t.clientX; camTouchStartY = t.clientY;
+  camTouchActive = true;
+  e.preventDefault();
+}, { passive: false });
+camArea.addEventListener('touchmove', e => {
+  if (!camTouchActive) return;
+  const t = e.touches[0];
+  const dx = t.clientX - camTouchStartX;
+  const dy = t.clientY - camTouchStartY;
+  player.yaw += dx * 0.005;
+  player.pitch -= dy * 0.005;
+  player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch));
+  camTouchStartX = t.clientX; camTouchStartY = t.clientY;
+  e.preventDefault();
+}, { passive: false });
+camArea.addEventListener('touchend', () => { camTouchActive = false; }, { passive: false });
+
+// Mobile buttons
+document.getElementById('btn-break').addEventListener('touchstart', e => { e.preventDefault(); breakBlock(); }, { passive: false });
+document.getElementById('btn-place').addEventListener('touchstart', e => { e.preventDefault(); placeBlock(); }, { passive: false });
+
+function playerJump() { if (player.onGround) { jumpPressed = true; } }
+
+// ---- HUD Updates ----
+function updateHotbar() {
+  const hotbar = document.getElementById('hotbar');
+  hotbar.innerHTML = '';
+  player.hotbar.forEach((blockType, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'hotbar-slot' + (i === player.selectedSlot ? ' active' : '');
+    const info = BLOCK_INFO[blockType];
+    slot.innerHTML = `<span style="font-size:22px">${info?.emoji || '🧱'}</span><span class="slot-label">${i + 1}</span>`;
+    slot.onclick = () => selectSlot(i);
+    slot.style.pointerEvents = 'all';
+    hotbar.appendChild(slot);
+  });
+}
+
+function selectSlot(i) {
+  player.selectedSlot = i;
+  updateHotbar();
+  const info = BLOCK_INFO[player.hotbar[i]];
+  document.getElementById('block-display').textContent = info?.name || 'Air';
+}
+
+function updateInfoPanel() {
+  document.getElementById('pos-display').textContent =
+    `${Math.floor(player.x)}, ${Math.floor(player.y)}, ${Math.floor(player.z)}`;
+  document.getElementById('fps-display').textContent = fps;
+
+  const bx = Math.floor(player.x), by = Math.floor(player.y - 1), bz = Math.floor(player.z);
+  const belowBlock = getBlock(bx, by, bz);
+  const biome = getBiome(bx, bz);
+  document.getElementById('biome-display').textContent = biome;
+}
+
+function getBiome(x, z) {
+  const cx = Math.floor(WORLD_W / 2), cz = Math.floor(WORLD_D / 2);
+  const dist = Math.sqrt((x-cx)*(x-cx) + (z-cz)*(z-cz));
+  if (dist < 12) return '🛕 Temple Ruins';
+  if (dist < 20) return '🌿 Sacred Jungle';
+  return '🏔️ Khmer Highlands';
+}
+
+// ---- Notifications ----
+function showNotif(text) {
+  const el = document.createElement('div');
+  el.className = 'notif';
+  el.textContent = text;
+  document.getElementById('notifications').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ---- Inventory ----
+function toggleInventory() {
+  inventoryOpen = !inventoryOpen;
+  const screen = document.getElementById('inventory-screen');
+  if (inventoryOpen) {
+    screen.style.display = 'block';
+    if (pointerLocked) document.exitPointerLock();
+    const grid = document.getElementById('inv-grid');
+    grid.innerHTML = '';
+    // Show all block types
+    Object.keys(BLOCK_INFO).forEach(blockId => {
+      const slot = document.createElement('div');
+      slot.className = 'inv-slot';
+      const info = BLOCK_INFO[blockId];
+      const count = player.inventory[blockId] || 0;
+      slot.innerHTML = `${info.emoji}<br><small style="font-size:8px;color:#aaa">${count}</small>`;
+      slot.title = info.name;
+      slot.onclick = () => {
+        player.hotbar[player.selectedSlot] = parseInt(blockId);
+        updateHotbar();
+        showNotif(`Selected ${info.name}`);
+      };
+      grid.appendChild(slot);
+    });
+  } else {
+    screen.style.display = 'none';
+    canvas.requestPointerLock();
+  }
+}
+
+function closeInventory() {
+  inventoryOpen = false;
+  document.getElementById('inventory-screen').style.display = 'none';
+  canvas.requestPointerLock();
+}
+
+// ---- Pause ----
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pause-menu').style.display = paused ? 'block' : 'none';
+  if (paused && pointerLocked) document.exitPointerLock();
+  if (!paused) canvas.requestPointerLock();
+}
+
+function resumeGame() {
+  paused = false;
+  document.getElementById('pause-menu').style.display = 'none';
+  canvas.requestPointerLock();
+}
+
+// ---- Main Loop ----
+let lastTime = 0;
+let minimapTimer = 0;
+
+function gameLoop(timestamp) {
+  if (!gameRunning) return;
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  // FPS
+  frameCount++;
+  if (timestamp - lastFpsTime > 1000) {
+    fps = Math.round(frameCount * 1000 / (timestamp - lastFpsTime));
+    frameCount = 0; lastFpsTime = timestamp;
+  }
+
+  // Day/night cycle
+  gameTime = (gameTime + dt * 0.005) % 1;
+
+  if (!paused && !inventoryOpen) {
+    updatePhysics(dt);
+
+    // Camera rotation with keyboard
+    if (keys['ArrowLeft']) player.yaw -= 1.5 * dt;
+    if (keys['ArrowRight']) player.yaw += 1.5 * dt;
+    if (keys['ArrowUp'] && keys['ShiftLeft']) player.pitch += 1 * dt;
+    if (keys['ArrowDown'] && keys['ShiftLeft']) player.pitch -= 1 * dt;
+  }
+
+  renderWorld();
+  updateInfoPanel();
+
+  // Update minimap every 2 seconds
+  minimapTimer += dt;
+  if (minimapTimer > 2) { updateMinimap(); minimapTimer = 0; }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ---- Start Game ----
+function startGame() {
+  document.getElementById('start-screen').style.display = 'none';
+  gameRunning = true;
+  resizeCanvas();
+
+  showNotif('🛕 Generating Angkor Wat world...');
+  setTimeout(() => {
+    generateWorld();
+    createNPCs();
+
+    // Spawn player above temple
+    player.x = 40; player.z = 40;
+    player.y = getGroundY(40, 40) + 3;
+    player.yaw = Math.PI / 4;
+
+    updateHotbar();
+    updateMinimap();
+
+    showNotif('🌟 Welcome to Angkor Craft! WASD to move, Click to break/place, F to talk to NPCs');
+    showNotif('Press ESC for menu | E for inventory');
+
+    canvas.requestPointerLock();
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+  }, 100);
+}
+
+function showControls() {
+  const ct = document.getElementById('controls-text');
+  ct.style.fontSize = '13px';
+  ct.style.color = '#FFD700';
+}
+
+// Handle resize
+window.addEventListener('resize', resizeCanvas);
+
+// Initial canvas setup
+resizeCanvas();
+
+// Render a preview on start screen
+(function animateStartScreen() {
+  if (!gameRunning) requestAnimationFrame(animateStartScreen);
+})();
+</script>
+</body>
+</html>
